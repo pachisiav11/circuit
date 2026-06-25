@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIRCUIT — A Strategic State Control Game</title>
+<style>
+  :root{
+    --bg:#0c1018; --panel:#141b27; --panel2:#1c2636; --line:#2b3a52;
+    --ink:#e8eef7; --dim:#8ea0b8; --p1:#5aa0ff; --p2:#ff6b6b;
+    --gold:#f5b942; --good:#34d399; --acc:#7dd3fc; --step:#5cc8ff; --danger:#ff9a4d;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);}
+  #app{display:flex;height:100vh;}
+  #board-wrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center;padding:10px;min-width:0;}
+  #board{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+  #side{flex:0 0 322px;width:322px;background:var(--panel);border-left:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:11px;overflow-y:auto;height:100vh;}
+  h1{font-size:19px;letter-spacing:4px;margin:0;font-weight:700;}
+  h1 small{display:block;font-size:9px;letter-spacing:2px;color:var(--dim);font-weight:400;margin-top:3px;}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .players{display:flex;gap:10px;}
+  .pcard{flex:1;border-radius:10px;padding:9px;border:2px solid transparent;}
+  .pcard.p1{border-color:var(--p1);} .pcard.p2{border-color:var(--p2);}
+  .pcard.active{box-shadow:0 0 0 2px #fff inset;}
+  .pname{font-weight:700;font-size:12px;}
+  .pstat{font-size:11px;color:var(--dim);margin-top:3px;}
+  .pstat b{color:var(--ink);}
+  .badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;background:#0a0f17;color:var(--dim);}
+  button{font-family:inherit;cursor:pointer;border-radius:8px;padding:9px 11px;font-size:13px;font-weight:600;background:var(--panel2);color:var(--ink);border:1px solid var(--line);transition:.12s;}
+  button:hover:not(:disabled){background:#26344a;}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+  button.primary{background:#2563eb;border-color:#2563eb;color:#fff;}
+  button.warn{background:#3a2a12;border-color:var(--gold);color:var(--gold);}
+  .btnrow{display:flex;gap:8px;} .btnrow button{flex:1;}
+  #log{font-size:11px;color:var(--dim);max-height:120px;overflow-y:auto;line-height:1.5;}
+  #log .me{color:var(--acc);}
+  .dieval{font-size:24px;font-weight:800;color:var(--gold);}
+  .hint{font-size:11px;color:var(--dim);line-height:1.45;}
+  .hint b{color:var(--ink);}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .chip{font-size:11px;padding:6px 9px;border-radius:8px;border:1px solid var(--line);background:#0c131e;color:var(--dim);}
+  .chip b{color:var(--ink);} .chip .d{opacity:.7;}
+  svg{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100vh - 24px);border-radius:14px;}
+  .cell{stroke-width:2;cursor:default;transition:fill .15s,stroke .12s;}
+  .cell.clickable{cursor:pointer;}
+  .lbl{font-size:11px;fill:#eef4fc;text-anchor:middle;pointer-events:none;font-weight:700;letter-spacing:.4px;}
+  .cst{font-size:14px;text-anchor:middle;pointer-events:none;font-weight:700;}
+  .cst.big{font-size:18px;font-weight:800;}
+  #overlay{position:fixed;inset:0;background:rgba(6,9,14,.88);display:flex;align-items:center;justify-content:center;z-index:50;}
+  #overlay .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px 32px;max-width:520px;text-align:center;}
+  #overlay h2{margin:0 0 10px;letter-spacing:2px;}
+  #overlay p{color:var(--dim);font-size:13px;line-height:1.6;}
+  .legend{display:flex;gap:9px;font-size:10px;color:var(--dim);flex-wrap:wrap;justify-content:center;}
+  .legend span{display:flex;align-items:center;gap:4px;}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .phase{font-size:11px;letter-spacing:1px;color:var(--acc);text-transform:uppercase;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="board-wrap"><div id="board"></div></div>
+  <div id="side">
+    <div class="row" style="align-items:flex-start;">
+      <h1>CIRCUIT<small>STRATEGIC STATE CONTROL · HOT-SEAT</small></h1>
+      <div style="display:flex;flex-direction:column;gap:6px;flex:0 0 auto;">
+        <button onclick="showRules()" style="padding:6px 10px;">📖 Rules</button>
+        <button onclick="showHistory()" style="padding:6px 10px;">📜 History</button>
+        <button onclick="saveToFile()" style="padding:6px 10px;">💾 Save</button>
+        <button onclick="document.getElementById('loadFile').click()" style="padding:6px 10px;">📂 Load</button>
+        <input id="loadFile" type="file" accept="application/json,.json" style="display:none" onchange="loadFromFile(this)">
+      </div>
+    </div>
+    <div class="players" id="players"></div>
+    <div class="card">
+      <div class="row"><span class="phase" id="phaseLabel">—</span><span class="badge" id="turnBadge">Turn 1 / 20</span></div>
+      <div id="instruction" class="hint" style="margin-top:8px;">—</div>
+      <div id="controls" style="margin-top:10px;"></div>
+    </div>
+    <div class="card" id="contractCard"></div>
+    <div class="card">
+      <div class="row" style="margin-bottom:2px;"><b style="font-size:13px;">Steps left</b><span class="dieval" id="dieView"></span></div>
+      <div class="hint">
+        <span style="color:var(--step)">Blue</span> = step here · <span style="color:var(--danger)">orange</span> = opponent tile (−1) · <span style="color:var(--good)">green</span> = reach & afford · <span style="color:#f5e05a">yellow</span> = in reach, can't afford.
+      </div>
+      <div class="chips" id="flopChips"></div>
+    </div>
+    <div class="card">
+      <div class="legend">
+        <span><i class="dot" style="background:var(--p1)"></i>P1</span>
+        <span><i class="dot" style="background:var(--p2)"></i>P2</span>
+        <span><i class="dot" style="background:#d9d2f0"></i>$2</span>
+        <span><i class="dot" style="background:#c3b6ea"></i>$3</span>
+        <span><i class="dot" style="background:#a892dd"></i>$4</span>
+        <span><i class="dot" style="background:#8a6fcf"></i>$5</span>
+        <span><i class="dot" style="background:#6b4fb8"></i>$6</span>
+        <span><i class="dot" style="background:#45307e"></i>$8</span>
+      </div>
+    </div>
+    <div class="card"><b style="font-size:13px;">Log</b><div id="log" style="margin-top:6px;"></div></div>
+  </div>
+</div>
+
+<div id="claimPrompt" style="position:fixed;inset:0;background:rgba(6,9,14,.88);display:none;align-items:center;justify-content:center;z-index:65;padding:20px;">
+  <div class="modal" style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 30px;max-width:420px;text-align:center;"></div>
+</div>
+
+<div id="history" style="position:fixed;inset:0;background:rgba(6,9,14,.9);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;">
+  <div class="modal" style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 28px;max-width:520px;width:100%;"></div>
+</div>
+
+<div id="overlay">
+  <div class="modal">
+    <h2>CIRCUIT</h2>
+    <p>Two players, one fixed 25-state map, 15 currency each. Build the largest <b>connected cluster</b> over 20 turns.</p>
+    <p>Each turn, <b>Roll</b> a d3 then move your token that many steps — one adjacent state at a time, <b>you pick the route</b>.
+    You lose <b>1 currency for every opponent tile</b> you pass through or stop on. Move onto an unclaimed Flop state to claim it, which ends your turn.
+    Or <b>Hold</b> to bank <b>+5 currency</b> and end your turn without moving.</p>
+    <p style="color:var(--gold)">Hot-seat: two humans share this screen. Pass the device each turn.</p>
+    <div style="margin-top:14px;font-size:13px;color:var(--ink);">Player 2: <select id="p2mode" onchange="P2MODE=this.value;togglePanels()" style="font-family:inherit;font-size:13px;padding:4px 8px;border-radius:6px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);"><option value="human">Human (hot-seat)</option><option value="random">Random bot</option><option value="heuristic">Heuristic AI</option><option value="llm">OpenAI AI (needs local server)</option><option value="online">🌐 Online opponent (by code)</option></select></div>
+    <button id="localStartBtn" class="primary" style="margin-top:12px;width:100%;" onclick="startGame()">Start Game</button>
+    <button style="margin-top:8px;width:100%;" onclick="document.getElementById('loadFile').click()">📂 Load game / watch replay</button>
+    <div id="onlinePanel" style="display:none;margin-top:16px;border-top:1px solid var(--line);padding-top:14px;text-align:left;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;">🌐 Play online (human vs human) — share the code</div>
+      <button class="primary" style="width:100%;" onclick="onlineCreate()">Create online game</button>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <input id="joinCode" maxlength="4" placeholder="CODE" oninput="this.value=this.value.toUpperCase()" style="flex:1;font-family:inherit;font-size:15px;letter-spacing:3px;text-align:center;padding:8px;border-radius:8px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);text-transform:uppercase;">
+        <button onclick="onlineJoin()">Join</button>
+      </div>
+      <div id="onlineMsg" style="font-size:12px;color:var(--dim);margin-top:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<div id="rules" style="position:fixed;inset:0;background:rgba(6,9,14,.9);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 30px;max-width:560px;max-height:88vh;overflow-y:auto;line-height:1.6;font-size:13.5px;">
+    <div class="row"><h2 style="margin:0;letter-spacing:2px;">How to Play</h2><button onclick="hideRules()" style="padding:6px 12px;">✕ Close</button></div>
+    <p style="color:var(--ink);margin-top:14px;"><b>🎯 Goal.</b> Over 20 turns, build the biggest single <b>connected cluster</b> of states. You can own several separate groups, but only your <b>largest connected cluster</b> counts as your score. Ties are broken by: most total states owned, then highest total spent buying states.</p>
+    <p style="color:var(--ink);"><b>💰 Money.</b> You start with 15 coins and the only way to gain more is Holding (+5). Coins are <b>capped at 20</b>, so you can't sit and hoard. Spend wisely: every coin is precious.</p>
+    <p style="color:var(--ink);"><b>🎲 Each turn, pick ONE:</b></p>
+    <p style="margin-left:14px;"><b>① Roll the d3</b> → move your <b>token</b> 1–3 steps across borders. You choose the route, one tile at a time. When you click an affordable Flop tile, a popup asks whether to <b>Claim</b> it (ends your turn) or just <b>Pass through</b> — you're never forced to buy a tile you only walk over. The board is several moves wide, so getting somewhere takes planning.<br>
+    <b>② Hold</b> → skip moving and bank <b>+5 coins</b>. Your turn ends. This is how a broke player gets back in the game.</p>
+    <p style="color:var(--ink);"><b>🚶 Moving costs.</b> Stepping across your own land or empty land is free. Stepping onto an <span style="color:var(--danger)">opponent's tile costs 1 coin each</span>. You can't make a move you can't pay for — if you're out of coins, you can't enter enemy tiles.</p>
+    <p style="color:var(--ink);"><b>🟩 The colours while moving:</b></p>
+    <p style="margin-left:14px;"><span style="color:var(--step)">Blue tile</span> = a free step you can take · <span style="color:var(--danger)">orange tile</span> = opponent tile, costs 1 to step on · <span style="color:var(--good)">bright green</span> = click to claim or pass through · <span style="color:#5ff0a8">dark green</span> = a Flop state you can afford to reach this turn · <span style="color:#f5e05a">yellow</span> = a Flop state in reach but too expensive to claim right now (walk toward it / save up).</p>
+    <p style="color:var(--ink);"><b>🗡️ Stealing.</b> You can seize an opponent's state instead of claiming a Flop tile. Step onto their tile (the usual −1 toll), then pay <b>double its price</b> to take it — this ends your turn (shown in <span style="color:var(--gold)">gold</span> on the board). It's an expensive, all-in play, but taking a key "bridge" tile can split your opponent's cluster in two. A tile that just changed hands can't be stolen back on the very next turn.</p>
+    <p style="color:var(--ink);"><b>🎯 Secret Contract.</b> You always hold one private target state, shown only to you. To claim it: walk your token <b>onto</b> it (it's unmarked — remember it by name), then in your panel press <b>Reveal → Show → Buy</b> (same price as a Flop tile). Only that deliberate purchase reveals it — walking over it does nothing and exposes nothing. It's pulled from the shared pool (never in the Flop; the opponent can't claim or steal it), and buying draws a new hidden one.</p>
+    <p style="color:var(--ink);"><b>🃏 The Flop.</b> Only the 3 states in the Flop are claimable. When you claim one, it's replaced by a fresh state. The price tiers run from cheap <span style="color:#6f6a92">$2 edges</span> up to the pricey <span style="color:#ff7ec8">$8 centre (GRAIL)</span> — central states connect to more neighbours.</p>
+    <p style="color:var(--ink);"><b>🏆 Winning.</b> After turn 10, whoever has the most states in a single unbroken cluster wins. If that's tied, the player who owns more states total wins; if still tied, the one who spent more coins buying states wins. If everything is still tied, it's a draw.</p>
+    <button class="primary" onclick="hideRules()" style="width:100%;margin-top:8px;">Got it</button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+function showRules(){document.getElementById('rules').style.display='flex';}
+function hideRules(){document.getElementById('rules').style.display='none';}
+/* ===================== MAP DATA ===================== */
+const COST={GRAIL:8,HOLT:6,IRVIK:6,CORR:6,WELD:6,FENN:5,JORA:5,KEST:5,LORN:5,ESKAR:5,
+  BRECK:4,DORNE:4,TAVE:4,OREL:4,VESS:4,PELL:4,AVEN:3,CALLUM:3,MAVE:3,VALE:3,
+  RAVEN:2,QUELL:2,PRYCE:2,NASK:2,SOLT:2};
+const POS={
+  CORR:[470,135],BRECK:[350,170],CALLUM:[505,162],DORNE:[655,165],QUELL:[815,205],
+  AVEN:[190,205],FENN:[252,292],GRAIL:[435,280],HOLT:[588,285],JORA:[735,292],
+  RAVEN:[120,325],PRYCE:[850,325],ESKAR:[212,415],KEST:[362,398],IRVIK:[510,412],
+  LORN:[665,400],MAVE:[770,422],PELL:[867,440],NASK:[108,458],SOLT:[165,540],
+  TAVE:[293,522],OREL:[438,522],VESS:[588,515],VALE:[732,502],WELD:[353,605]};
+const EDGE_STATES=["RAVEN","QUELL","PRYCE","NASK","SOLT"];
+const ALL=Object.keys(POS);
+const COIN_CAP=20; // maximum currency — prevents hoarding
+const BOX=[[60,100],[930,100],[930,660],[60,660]];
+
+function clip(poly,ax,ay,bx,by){
+  const mx=(ax+bx)/2,my=(ay+by)/2,dx=bx-ax,dy=by-ay;
+  const inside=p=>((p[0]-mx)*dx+(p[1]-my)*dy)<=0;const out=[];
+  for(let i=0;i<poly.length;i++){const cur=poly[i],nxt=poly[(i+1)%poly.length];
+    const ci=inside(cur),ni=inside(nxt);if(ci)out.push(cur);
+    if(ci!==ni){const den=((nxt[0]-cur[0])*dx+(nxt[1]-cur[1])*dy);
+      const f=((mx-cur[0])*dx+(my-cur[1])*dy)/den;out.push([cur[0]+f*(nxt[0]-cur[0]),cur[1]+f*(nxt[1]-cur[1])]);}}
+  return out;}
+const CELL={};
+ALL.forEach(s=>{let poly=BOX.map(p=>[...p]);
+  ALL.forEach(o=>{if(o!==s&&poly.length)poly=clip(poly,POS[s][0],POS[s][1],POS[o][0],POS[o][1]);});CELL[s]=poly;});
+function polyArea(p){let a=0;for(let i=0;i<p.length;i++){const j=(i+1)%p.length;a+=p[i][0]*p[j][1]-p[j][0]*p[i][1];}return Math.abs(a/2);}
+const AREA={};ALL.forEach(s=>AREA[s]=Math.round(polyArea(CELL[s])));
+const CTR={};ALL.forEach(s=>CTR[s]=CELL[s].reduce((a,p)=>[a[0]+p[0],a[1]+p[1]],[0,0]).map(v=>v/CELL[s].length));
+function ekeys(poly){const e=new Set();for(let i=0;i<poly.length;i++){let a=poly[i],b=poly[(i+1)%poly.length];
+  let k=[[Math.round(a[0]*2)/2,Math.round(a[1]*2)/2],[Math.round(b[0]*2)/2,Math.round(b[1]*2)/2]].sort();e.add(JSON.stringify(k));}return e;}
+const EK={};ALL.forEach(s=>EK[s]=ekeys(CELL[s]));
+const ADJ={};ALL.forEach(s=>ADJ[s]=new Set());
+for(let i=0;i<ALL.length;i++)for(let j=i+1;j<ALL.length;j++){const a=ALL[i],b=ALL[j];
+  for(const e of EK[a])if(EK[b].has(e)){ADJ[a].add(b);ADJ[b].add(a);break;}}
+// monochrome lavender ramp: $2 lightest -> $8 darkest (tx = readable label colour)
+const TIER={8:{fill:'#45307e',stk:'#5e489f',tx:'#efeaff'},6:{fill:'#6b4fb8',stk:'#8367cf',tx:'#f0ebff'},5:{fill:'#8a6fcf',stk:'#a489df',tx:'#f3efff'},
+  4:{fill:'#a892dd',stk:'#bda9e8',tx:'#241a44'},3:{fill:'#c3b6ea',stk:'#d2c8f1',tx:'#241a44'},2:{fill:'#d9d2f0',stk:'#e6e0f7',tx:'#2a2150'}};
+
+/* ===================== GAME STATE ===================== */
+let G=null;
+function newState(){
+  const order=[0,1];   // Player 1 always goes first
+  const center=[495,380];const ang=s=>Math.atan2(POS[s][1]-center[1],POS[s][0]-center[0]);
+  const e1=EDGE_STATES[(Math.random()*EDGE_STATES.length)|0];let best=null,bd=-1;
+  EDGE_STATES.forEach(e=>{if(e===e1)return;let d=Math.abs(ang(e)-ang(e1));d=Math.min(d,2*Math.PI-d);if(d>bd){bd=d;best=e;}});
+  const starts=[e1,best];const owner={};owner[e1]=0;owner[best]=1;const token=[e1,best];
+  const pool=ALL.filter(s=>owner[s]===undefined&&!EDGE_STATES.includes(s));shuffle(pool);
+  const flop=pool.splice(0,3);
+  // each player gets a private secret contract pulled OUT of the shared pool (disjoint from flop)
+  const contract=[pool.length?pool.pop():null, pool.length?pool.pop():null];
+  return {turn:1,activeIdx:order[0],order,currency:[15,15],owner,starts,token,flop,contract,
+    spent:[0,0],tick:0,stealLock:{},die:null,stepsLeft:0,moved:false,blockedStreak:[0,0],phase:'roll',log:[]};}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ===================== RULES ===================== */
+function statesOf(p){return ALL.filter(s=>G.owner[s]===p);}
+function claimedCount(p){return statesOf(p).filter(s=>s!==G.starts[p]).length;}
+function oppOf(p){return p?0:1;}
+function distFromToken(p){const d={},q=[];const t=G.token[p];d[t]=0;q.push(t);
+  while(q.length){const x=q.shift();ADJ[x].forEach(n=>{if(d[n]===undefined){d[n]=d[x]+1;q.push(n);}});}return d;}
+// largest connected cluster of the player's owned states (any cluster — need not include the start)
+function connectedScore(p){const own=new Set(statesOf(p));const seen=new Set();
+  let best={count:0,area:0,set:new Set()};
+  own.forEach(s=>{if(seen.has(s))return;const comp=new Set([s]),q=[s];seen.add(s);
+    while(q.length){const x=q.shift();ADJ[x].forEach(n=>{if(own.has(n)&&!seen.has(n)){seen.add(n);comp.add(n);q.push(n);}});}
+    let area=0;comp.forEach(t=>area+=AREA[t]);
+    if(comp.size>best.count||(comp.size===best.count&&area>best.area))best={count:comp.size,area,set:comp};});
+  return best;}
+function discount(){return 0;} // lucky-6 retired with the move to a d3
+// step legality (route through own/opponent/empty-land; never onto an unclaimed Flop except by claiming)
+function isStep(s,p){
+  if(G.phase!=='move'||G.stepsLeft<1)return false;
+  if(!ADJ[G.token[p]].has(s))return false;
+  if(G.owner[s]===oppOf(p)&&G.currency[p]<1)return false;     // can't afford the opponent-tile toll → blocked
+  return true;}                                                // every unclaimed tile is walkable; claiming a Flop tile is an explicit choice (popup)
+// states free to be drawn into the Flop or as a contract (never edge/start, owned, in-flop, or already a contract)
+function freeStates(){return ALL.filter(s=>!EDGE_STATES.includes(s)&&G.owner[s]===undefined&&!G.flop.includes(s)&&G.contract[0]!==s&&G.contract[1]!==s);}
+function drawContract(p){const av=freeStates();G.contract[p]=av.length?av[(Math.random()*av.length)|0]:null;}
+// min opponent-tile tolls to STAND on each tile within maxSteps (can't stand on unclaimed Flop tiles)
+function routeReach(p,maxSteps){
+  const start=G.token[p];const best={};ALL.forEach(t=>best[t]=Infinity);best[start]=0;
+  let cur={};ALL.forEach(t=>cur[t]=Infinity);cur[start]=0;
+  for(let step=1;step<=maxSteps;step++){
+    const nxt={};ALL.forEach(t=>nxt[t]=Infinity);
+    ALL.forEach(a=>{if(cur[a]===Infinity)return;
+      ADJ[a].forEach(b=>{const toll=(G.owner[b]===oppOf(p))?1:0;const v=cur[a]+toll;if(v<nxt[b])nxt[b]=v;}); // every tile is walkable now
+    });
+    ALL.forEach(t=>{if(nxt[t]<best[t])best[t]=nxt[t];});
+    cur=nxt;
+  }
+  return best;}
+// a Flop state is reachable if some affordable route (tolls + claim cost ≤ currency) reaches it within steps
+function flopReachable(F,p,route){
+  if(!route)return false;
+  if(G.owner[F]!==undefined||!G.flop.includes(F)||G.stepsLeft<1)return false;
+  const claim=Math.max(0,COST[F]-discount());let minToll=Infinity;
+  ADJ[F].forEach(n=>{if(route[n]!==undefined&&route[n]<minToll)minToll=route[n];});
+  return minToll!==Infinity && G.currency[p]>=minToll+claim;}
+// reachable Flop tile you can get to, but can't afford the claim -> yellow (informational, not claimable)
+function flopReachUnaff(F,p,route){
+  if(!route||G.owner[F]!==undefined||!G.flop.includes(F)||G.stepsLeft<1)return false;
+  const claim=Math.max(0,COST[F]-discount());let minToll=Infinity;
+  ADJ[F].forEach(n=>{if(route[n]!==undefined&&route[n]<minToll)minToll=route[n];});
+  if(minToll===Infinity||G.currency[p]<minToll)return false;   // can't even reach it
+  return G.currency[p] < minToll+claim;}                       // reachable, but claim unaffordable
+// claimable destination: adjacent unclaimed Flop state you can afford, with a step available
+function canClaim(s,p){
+  if(G.phase!=='move'||G.stepsLeft<1)return false;
+  if(!ADJ[G.token[p]].has(s))return false;
+  if(G.owner[s]!==undefined||!G.flop.includes(s))return false; // click-to-claim is Flop-only; contracts are bought via the panel
+  return G.currency[p]>=Math.max(0,COST[s]-discount());}
+// secret contract: walk onto it, then deliberately buy it from the panel (only the purchase reveals it)
+function canBuyContract(p){const c=G.contract[p];return G.phase==='move'&&c!=null&&G.token[p]===c&&G.owner[c]===undefined&&G.currency[p]>=COST[c];}
+function doBuyContract(){const p=G.activeIdx,c=G.contract[p];if(!canBuyContract(p))return;
+  const cost=COST[c];G.currency[p]-=cost;G.spent[p]+=cost;G.owner[c]=p;G.blockedStreak[p]=0;
+  G.contract[p]=null;drawContract(p);revealStage=0;   // draw the replacement immediately (reserved out of the pool)
+  log(`<span class="me">${pname(p)}</span> 🎯 fulfilled a secret contract — claimed <b>${c}</b> ($${cost}) and drew a new one. Turn ends.`);
+  endTurn();}
+function anyMoveAvailable(p){return ALL.some(s=>isStep(s,p)||canClaim(s,p));}
+
+/* ===================== TURN FLOW ===================== */
+let revealStage=0; // secret-contract reveal: 0 hidden, 1 confirm, 2 shown — reset every turn (auto-hide)
+function rcReveal(){revealStage=1;render();}
+function rcShow(){revealStage=2;render();}
+function rcHide(){revealStage=0;render();}
+function startTurn(){if(!REPLAYMODE)REPLAY.push(snap());G.die=null;G.stepsLeft=0;G.moved=false;G.phase='roll';revealStage=0;
+  if(G.contract[G.activeIdx]==null&&freeStates().length)drawContract(G.activeIdx); // safety regrant if a state has freed up
+  log(`<span class="me">${pname(G.activeIdx)}</span> — turn ${G.turn}. Currency ${G.currency[G.activeIdx]}.`);render();}
+function doRoll(){if(G.phase!=='roll')return;G.die=1+((Math.random()*3)|0);G.stepsLeft=G.die;G.phase='move';
+  log(`${pname(G.activeIdx)} rolled <b>${G.die}</b> → ${G.die} step${G.die===1?'':'s'} to move.`);
+  if(!anyMoveAvailable(G.activeIdx)){G.phase='blocked';}
+  render();}
+function doHold(){if(G.phase!=='roll')return;const p=G.activeIdx;
+  const before=G.currency[p];G.currency[p]=Math.min(COIN_CAP,G.currency[p]+5);const got=G.currency[p]-before;
+  log(`${pname(p)} held → <span style="color:var(--gold)">+${got} currency</span>${got<5?` (capped at ${COIN_CAP})`:''}. Currency ${G.currency[p]}.`);endTurn();}
+function doStep(s){const p=G.activeIdx;if(!isStep(s,p))return;
+  let pen=0;if(G.owner[s]===oppOf(p)){pen=1;G.currency[p]=Math.max(0,G.currency[p]-1);}
+  G.token[p]=s;G.stepsLeft--;G.moved=true;
+  log(`${pname(p)} moved to ${s}${pen?` <span style="color:var(--danger)">(−1 opponent tile)</span>`:''}. Steps left ${G.stepsLeft}.`);
+  if(G.stepsLeft<1||!anyMoveAvailable(p)){ // auto-end if nothing more possible
+    if(G.stepsLeft<1)log(`${pname(p)} out of steps.`);
+  }
+  render();}
+function doClaim(s){const p=G.activeIdx;if(!canClaim(s,p))return;
+  const cost=Math.max(0,COST[s]-discount());
+  G.token[p]=s;G.stepsLeft--;G.currency[p]-=cost;G.spent[p]+=cost;G.owner[s]=p;G.blockedStreak[p]=0;
+  G.flop=G.flop.filter(x=>x!==s);refillFlop();
+  log(`<span class="me">${pname(p)}</span> moved onto & claimed <b>${s}</b> ($${cost}). Turn ends. Currency ${G.currency[p]}.`);
+  endTurn();}
+function stealCostFor(s){return Math.max(0,2*COST[s]-discount());}
+function stealLocked(s){return (G.tick-(s in G.stealLock?G.stealLock[s]:-99))<=1;}
+function canStealHere(p){const t=G.token[p];
+  return G.phase==='move'&&G.owner[t]===oppOf(p)&&!stealLocked(t)&&G.currency[p]>=stealCostFor(t);}
+function doSteal(){const p=G.activeIdx,t=G.token[p];if(!canStealHere(p))return;
+  const cost=stealCostFor(t);G.currency[p]-=cost;G.spent[p]+=cost;G.owner[t]=p;G.stealLock[t]=G.tick;G.blockedStreak[p]=0;
+  log(`<span class="me">${pname(p)}</span> 🗡️ SEIZED <b>${t}</b> from ${pname(oppOf(p))} for $${cost}! Turn ends.`);
+  endTurn();}
+function doBlocked(){const p=G.activeIdx;
+  if(G.blockedStreak[p]>=2){log(`${pname(p)} blocked-resolution capped (2). Turn ends.`);endTurn();return;}
+  const roll=1+((Math.random()*6)|0),idx=(roll-1)%G.flop.length,removed=G.flop[idx];
+  G.flop.splice(idx,1);refillFlop();G.blockedStreak[p]++;
+  log(`${pname(p)} blocked → rolled ${roll}, swapped out <b>${removed}</b>.`);endTurn();}
+function refillFlop(){while(G.flop.length<3){const av=freeStates();
+  if(!av.length)break;G.flop.push(av[(Math.random()*av.length)|0]);}}
+function endTurn(){G.tick++;const pos=G.order.indexOf(G.activeIdx);
+  if(pos<G.order.length-1)G.activeIdx=G.order[pos+1];else{G.activeIdx=G.order[0];G.turn++;}
+  if(G.turn>20){endGame();return;}if(ONLINE){startTurn();return;}if(isBot(G.activeIdx))startBotTurn();else passScreen();}
+function passScreen(){document.getElementById('overlay').style.display='flex';
+  document.querySelector('#overlay .modal').innerHTML=
+    `<h2>${pname(G.activeIdx)}</h2><p>Turn ${G.turn} of 20. Pass the device to <b>${pname(G.activeIdx)}</b>.</p>`+
+    `<button class="primary" style="margin-top:14px;width:100%;" onclick="resume()">I'm ready</button>`;}
+function resume(){document.getElementById('overlay').style.display='none';startTurn();}
+function endGame(){if(!REPLAYMODE){REPLAY.push(snap());if(ONLINE&&MYROLE==='host'&&socket)socket.emit('replay',REPLAY);}const a=connectedScore(0),b=connectedScore(1);
+  const own=[statesOf(0).length,statesOf(1).length];const sp=[G.spent[0],G.spent[1]];
+  let w,reason='';
+  if(a.count!==b.count){w=a.count>b.count?0:1;}
+  else if(own[0]!==own[1]){w=own[0]>own[1]?0:1;reason='Tied on largest cluster — decided by total states owned.';}
+  else if(sp[0]!==sp[1]){w=sp[0]>sp[1]?0:1;reason='Tied on states — decided by total spent on bought states.';}
+  else{w=-1;reason='Tied on every measure — it\'s a draw.';}
+  pushHistory({t:Date.now(),turns:20,winner:w,reason:reason,
+    p:[{cluster:a.count,states:own[0],spent:sp[0]},{cluster:b.count,states:own[1],spent:sp[1]}]});
+  render();document.getElementById('overlay').style.display='flex';
+  document.querySelector('#overlay .modal').innerHTML=
+    `<h2>${w<0?'DRAW':pname(w)+' WINS'}</h2>`+
+    `<p><b>${pname(0)}</b>: cluster ${a.count} · ${own[0]} states · $${sp[0]} spent<br>`+
+    `<b>${pname(1)}</b>: cluster ${b.count} · ${own[1]} states · $${sp[1]} spent</p>`+
+    (reason?`<p style="color:var(--gold)">${reason}</p>`:'')+
+    `<button style="width:100%;margin-top:10px;" onclick="downloadReplay()">⬇ Download this game</button><button class="primary" style="margin-top:8px;width:100%;" onclick="location.reload()">Play again</button>`;}
+
+/* ===================== STORAGE (JSON file save/load; history in-memory) ===================== */
+const SAVE_VER=2;
+var HISTORY=[];   // in-memory results (this session, or loaded from a JSON file)
+function pushHistory(rec){HISTORY.unshift(rec);if(HISTORY.length>50)HISTORY.length=50;}
+function clearHistory(){HISTORY=[];renderHistory();}
+function saveToFile(){var data={v:SAVE_VER,savedAt:Date.now(),game:(typeof G!=='undefined'&&G?G:null),history:HISTORY,p2mode:P2MODE};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='circuit-save.json';document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},100);}
+function loadFromFile(input){var file=input.files&&input.files[0];if(!file){return;}
+  var r=new FileReader();r.onload=function(e){try{var data=JSON.parse(e.target.result);if(data.type==='circuit-replay'&&Array.isArray(data.frames)){input.value='';enterReplay(data.frames);return;}
+    if(data.p2mode)P2MODE=data.p2mode;
+    if(Array.isArray(data.history))HISTORY=data.history.slice(0,50);
+    if(data.game){G=data.game;document.getElementById('overlay').style.display='flex';passScreen();}else{renderHistory();}
+  }catch(err){alert('Could not read that save file.');}input.value='';};r.readAsText(file);}
+function showHistory(){renderHistory();document.getElementById('history').style.display='flex';}
+function hideHistory(){document.getElementById('history').style.display='none';}
+function renderHistory(){const h=HISTORY;const m=document.querySelector('#history .modal');
+  let html=`<div class="row"><h2 style="margin:0;letter-spacing:2px;">📜 Game History</h2><button onclick="hideHistory()" style="padding:6px 12px;">✕ Close</button></div>`;
+  if(!h.length){html+=`<p style="color:var(--dim);margin-top:14px;line-height:1.6;">No finished games yet. Results appear here after a game ends; use Save to keep them in a file.</p>`;}
+  else{html+=`<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto;">`;
+    h.forEach(r=>{const d=new Date(r.t);const ds=d.toLocaleDateString()+' '+d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      const res=r.winner<0?'Draw':(pname(r.winner)+' won');
+      html+=`<div class="card" style="text-align:left;"><div style="font-weight:700;font-size:13px;">${res} <span style="color:var(--dim);font-weight:400;font-size:11px;">· ${ds}</span></div>`+
+        `<div style="font-size:12px;color:var(--dim);margin-top:4px;">P1: cluster <b style="color:var(--ink)">${r.p[0].cluster}</b> · ${r.p[0].states} states · $${r.p[0].spent}&nbsp; | &nbsp;P2: cluster <b style="color:var(--ink)">${r.p[1].cluster}</b> · ${r.p[1].states} states · $${r.p[1].spent}</div>`+
+        (r.reason?`<div style="font-size:11px;color:var(--gold);margin-top:3px;">${r.reason}</div>`:'')+`</div>`;});
+    html+=`</div><button onclick="clearHistory()" class="warn" style="width:100%;margin-top:12px;">Clear history</button>`;}
+  m.innerHTML=html;}
+
+/* ===================== AI OPPONENT (Player 2) ===================== */
+var P2MODE='human';                 // 'human' | 'random' | 'heuristic' | 'llm'
+var AI_ENDPOINT='http://localhost:8787/api/ai-move';
+var AI_DELAY=420;                   // ms between animated bot actions
+function isBot(p){return p===1 && (P2MODE==='random'||P2MODE==='heuristic'||P2MODE==='llm');}
+function togglePanels(){var on=document.getElementById('p2mode').value==='online';var op=document.getElementById('onlinePanel');var sb=document.getElementById('localStartBtn');if(op)op.style.display=on?'block':'none';if(sb)sb.style.display=on?'none':'block';}
+function adjToOwn(s,p){var r=false;ADJ[s].forEach(function(n){if(G.owner[n]===p)r=true;});return r;}
+function actionKey(a){return a.type+(a.s?('_'+a.s):'');}
+function legalActions(p){
+  var acts=[];
+  if(G.phase==='roll'){acts.push({type:'roll'});acts.push({type:'hold'});}
+  else if(G.phase==='blocked'){acts.push({type:'blocked'});}
+  else if(G.phase==='move'){
+    if(canBuyContract(p))acts.push({type:'buyContract'});
+    if(canStealHere(p))acts.push({type:'steal'});
+    ALL.forEach(function(st){if(canClaim(st,p))acts.push({type:'claim',s:st});});
+    ALL.forEach(function(st){if(isStep(st,p))acts.push({type:'step',s:st});});
+    acts.push({type:'end'});
+  }
+  return acts;
+}
+function applyAction(a){
+  if(!a)return;
+  if(a.type==='roll')doRoll();
+  else if(a.type==='hold')doHold();
+  else if(a.type==='step')doStep(a.s);
+  else if(a.type==='claim')doClaim(a.s);
+  else if(a.type==='steal')doSteal();
+  else if(a.type==='buyContract')doBuyContract();
+  else if(a.type==='blocked')doBlocked();
+  else if(a.type==='end')endTurn();
+}
+function bfsFrom(t){var d={};d[t]=0;var q=[t];while(q.length){var x=q.shift();ADJ[x].forEach(function(n){if(d[n]===undefined){d[n]=d[x]+1;q.push(n);}});}return d;}
+function bestTargetFor(p){
+  var cands=G.flop.slice();if(G.contract[p])cands.push(G.contract[p]);
+  cands=cands.filter(function(st){return G.owner[st]===undefined;});
+  if(!cands.length)return null;
+  var d=distFromToken(p),best=null,bs=-1e9;
+  cands.forEach(function(st){var dist=(d[st]===undefined?99:d[st]);var afford=G.currency[p]>=COST[st];
+    var sc=(afford?100:0)-dist*5+COST[st]+(adjToOwn(st,p)?20:0);if(sc>bs){bs=sc;best=st;}});
+  return best;
+}
+function heuristicChoose(p,acts){
+  if(G.phase==='roll')return G.currency[p]<4?{type:'hold'}:{type:'roll'};
+  if(G.phase==='blocked')return {type:'blocked'};
+  var i,buy=null,steal=null,claims=[],steps=[];
+  for(i=0;i<acts.length;i++){var a=acts[i];
+    if(a.type==='buyContract')buy=a;else if(a.type==='steal')steal=a;
+    else if(a.type==='claim')claims.push(a);else if(a.type==='step')steps.push(a);}
+  if(buy)return buy;
+  if(claims.length){claims.sort(function(a,b){return ((adjToOwn(b.s,p)?100:0)+COST[b.s])-((adjToOwn(a.s,p)?100:0)+COST[a.s]);});return claims[0];}
+  if(steal&&COST[G.token[p]]>=4&&G.currency[p]>=stealCostFor(G.token[p]))return steal;
+  var T=bestTargetFor(p);
+  if(T&&steps.length){var dT=bfsFrom(T);steps.sort(function(a,b){return (dT[a.s]===undefined?99:dT[a.s])-(dT[b.s]===undefined?99:dT[b.s]);});return steps[0];}
+  if(steps.length)return steps[(Math.random()*steps.length)|0];
+  return {type:'end'};
+}
+function randomChoose(acts){return acts[(Math.random()*acts.length)|0];}   // each legal move equally likely
+function aiStateFor(p){
+  return {turn:G.turn,you:'P2',currency:{p1:G.currency[0],p2:G.currency[1]},stepsLeft:G.stepsLeft,phase:G.phase,
+    token:{p1:G.token[0],p2:G.token[1]},yourTiles:statesOf(p),oppTiles:statesOf(p?0:1),
+    flop:G.flop.map(function(st){return {state:st,cost:COST[st]};}),
+    yourContract:(G.contract[p]?{state:G.contract[p],cost:COST[G.contract[p]]}:null)};
+}
+function llmChoose(p,acts,cb){
+  var payload={state:aiStateFor(p),actions:acts.map(function(a){return {id:actionKey(a),type:a.type,state:a.s||null,cost:a.s?COST[a.s]:null};})};
+  fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();}).then(function(res){
+      var pick=null;for(var i=0;i<acts.length;i++){if(actionKey(acts[i])===res.action){pick=acts[i];break;}}
+      cb(pick||heuristicChoose(p,acts));
+    }).catch(function(){cb(heuristicChoose(p,acts));});
+}
+function chooseAction(p,acts,cb){
+  if(P2MODE==='random')cb(randomChoose(acts));
+  else if(P2MODE==='llm')llmChoose(p,acts,cb);
+  else cb(heuristicChoose(p,acts));
+}
+function startBotTurn(){
+  var ov=document.getElementById('overlay');ov.style.display='flex';
+  var name=(P2MODE==='random'?'random':(P2MODE==='llm'?'OpenAI':'heuristic'));
+  document.querySelector('#overlay .modal').innerHTML='<h2>Player 2 · AI</h2><p>The '+name+' opponent is taking its turn…</p>';
+  setTimeout(function(){ov.style.display='none';startTurn();setTimeout(botTurnStep,AI_DELAY);},700);
+}
+function botTurnStep(){
+  if(!G||!isBot(G.activeIdx))return;
+  var p=G.activeIdx,acts=legalActions(p);
+  if(!acts.length){endTurn();return;}
+  chooseAction(p,acts,function(a){
+    applyAction(a);
+    if(a&&(a.type==='roll'||a.type==='step')&&isBot(G.activeIdx)){setTimeout(botTurnStep,AI_DELAY);}
+  });
+}
+
+/* ===================== RENDER ===================== */
+function pname(p){return p===0?'Player 1':'Player 2';}
+function log(s){G.log.unshift(s);if(G.log.length>40)G.log.pop();}
+function startGame(){G=newState();REPLAY=[];document.getElementById('overlay').style.display='none';
+  log(`Game start. ${pname(0)} on ${G.starts[0]}, ${pname(1)} on ${G.starts[1]}. Order ${G.order.map(pname).join(' → ')}.`);
+  startTurn();}
+
+const NS="http://www.w3.org/2000/svg";let SVG=null,GROUP={};
+let pendingClaim=null;
+function onCellClick(s){if(REPLAYMODE)return;if(!G||G.phase!=='move')return;const p=G.activeIdx;if(isBot(p))return;if(ONLINE&&G.activeIdx!==MYIDX)return;
+  if(canClaim(s,p)){openClaimPrompt(s);return;}   // affordable Flop tile → ask claim vs pass (never auto-claim)
+  if(isStep(s,p))doStep(s);}
+function openClaimPrompt(s){pendingClaim=s;const cost=Math.max(0,COST[s]-discount());
+  document.querySelector('#claimPrompt .modal').innerHTML=
+    `<h2 style="margin:0 0 10px;letter-spacing:1px;">Claim ${s}?</h2>`+
+    `<p style="color:var(--dim);font-size:13px;line-height:1.6;">${s} costs <b style="color:var(--gold)">$${cost}</b>. Claiming it ends your turn. You can also just move onto it without buying.</p>`+
+    `<div class="btnrow" style="margin-top:14px;"><button class="primary" onclick="confirmClaim()">Claim for $${cost} — end turn</button><button onclick="passThrough()">Pass through</button></div>`+
+    `<button onclick="cancelClaim()" style="width:100%;margin-top:8px;">Cancel</button>`;
+  document.getElementById('claimPrompt').style.display='flex';}
+function confirmClaim(){const s=pendingClaim;pendingClaim=null;document.getElementById('claimPrompt').style.display='none';doClaim(s);}
+function passThrough(){const s=pendingClaim;pendingClaim=null;document.getElementById('claimPrompt').style.display='none';doStep(s);}
+function cancelClaim(){pendingClaim=null;document.getElementById('claimPrompt').style.display='none';}
+function buildBoard(){
+  const svg=document.createElementNS(NS,"svg");SVG=svg;svg.setAttribute("viewBox","0 0 1000 720");
+  const bg=document.createElementNS(NS,"rect");bg.setAttribute("width",1000);bg.setAttribute("height",720);bg.setAttribute("fill","#0a0e15");svg.appendChild(bg);
+  const frame=document.createElementNS(NS,"rect");frame.setAttribute("x",48);frame.setAttribute("y",88);frame.setAttribute("width",904);frame.setAttribute("height",584);
+  frame.setAttribute("rx",14);frame.setAttribute("fill","#0d1422");frame.setAttribute("stroke","#223149");svg.appendChild(frame);
+  const t1=document.createElementNS(NS,"text");t1.setAttribute("x",60);t1.setAttribute("y",46);
+  t1.setAttribute("fill","#e8eef7");t1.setAttribute("style","font:700 30px Segoe UI;letter-spacing:8px");t1.textContent="CIRCUIT";svg.appendChild(t1);
+  const t2=document.createElementNS(NS,"text");t2.setAttribute("x",62);t2.setAttribute("y",70);
+  t2.setAttribute("fill","#5f7290");t2.setAttribute("style","font:400 12px Segoe UI;letter-spacing:3px");
+  t2.textContent="FIXED MAP — 25 STATES — 2 PLAYERS — 20 TURNS";svg.appendChild(t2);
+  ALL.forEach(s=>{const g=document.createElementNS(NS,"g");GROUP[s]=g;
+    const poly=document.createElementNS(NS,"polygon");poly.setAttribute("points",CELL[s].map(p=>p.join(",")).join(" "));
+    poly.setAttribute("class","cell");poly.id="c_"+s;poly.addEventListener("click",()=>onCellClick(s));g.appendChild(poly);
+    const lbl=document.createElementNS(NS,"text");lbl.setAttribute("x",CTR[s][0]);lbl.setAttribute("y",CTR[s][1]-2);
+    lbl.setAttribute("class","lbl");lbl.textContent=s;g.appendChild(lbl);
+    const cst=document.createElementNS(NS,"text");cst.setAttribute("x",CTR[s][0]);cst.setAttribute("y",CTR[s][1]+12);
+    cst.setAttribute("class","cst");cst.id="cost_"+s;cst.textContent="$"+COST[s];g.appendChild(cst);
+    svg.appendChild(g);});
+  [0,1].forEach(p=>{const tk=document.createElementNS(NS,"circle");tk.id="tok_"+p;
+    tk.setAttribute("r",10);tk.setAttribute("fill","none");tk.setAttribute("stroke-width",4);
+    tk.setAttribute("stroke",p===0?"#bcd8ff":"#ffc4c4");tk.style.display="none";svg.appendChild(tk);});
+  document.getElementById('board').appendChild(svg);}
+function paintBoard(){
+  if(!G)return;const p=G.activeIdx;const sc0=connectedScore(0),sc1=connectedScore(1);const front=[];
+  const route=(G.phase==='move'&&!REPLAYMODE)?routeReach(p,Math.max(0,G.stepsLeft-1)):null;
+  ALL.forEach(s=>{const c=document.getElementById("c_"+s),cst=document.getElementById("cost_"+s);
+    let fill=TIER[COST[s]].fill,stk=TIER[COST[s]].stk,sw=2;
+    // owned states take the owning player's colour (brighter when connected)
+    if(G.owner[s]===0){fill=sc0.set.has(s)?"#5aa0ff":"#2e547e";stk="#bcd8ff";}
+    else if(G.owner[s]===1){fill=sc1.set.has(s)?"#ff6b6b":"#7e3535";stk="#ffc4c4";}
+    let label="$"+COST[s],big=false,lcol=G.owner[s]!==undefined?"#0b1018":TIER[COST[s]].tx;
+    c.classList.remove('clickable');
+    if(G.phase==='move' && !REPLAYMODE && s===G.token[p]){          // the tile the token sits on
+      if(canStealHere(p)){stk="#f5b942";sw=5;label="Seize $"+stealCostFor(s);big=true;lcol="#ffe9b0";}
+      else{stk="#ffffff";sw=4.5;}
+    }else if(G.phase==='move' && !REPLAYMODE){
+      if(canClaim(s,p)){                              // adjacent + affordable FLOP tile → solid green (contracts are NOT marked — remember by name)
+        fill="#1f7a4d";stk="#5ff0a8";sw=4.5;c.classList.add('clickable');front.push(s);
+        label="Claim for $"+Math.max(0,COST[s]-discount());big=true;lcol="#eafff5";
+      }else if(flopReachable(s,p,route)){             // reachable via an affordable route → green + price shown
+        fill="#1f5c3e";stk="#5ff0a8";sw=3.5;front.push(s);
+        label="$"+Math.max(0,COST[s]-discount());big=true;lcol="#eafff5";
+      }else if(flopReachUnaff(s,p,route)){            // in reach but unaffordable → yellow (no claim option)
+        fill="#5c4e1f";stk="#f5e05a";sw=3.5;front.push(s);
+        label="$"+Math.max(0,COST[s]-discount());big=true;lcol="#fff7d6";
+      }else if(isStep(s,p)){                          // steppable route tile (unaffordable opp tiles excluded)
+        const opp=G.owner[s]===oppOf(p);
+        stk=opp?"#ff9a4d":"#5cc8ff";sw=4;c.classList.add('clickable');front.push(s);
+        if(opp){const sc=stealCostFor(s);
+          label=(G.currency[p]>=1+sc&&!stealLocked(s))?`−1 · seize $${sc}`:"Step −1";lcol="#ffd9b8";}
+      }
+    }
+    c.setAttribute("fill",fill);c.setAttribute("stroke",stk);c.setAttribute("stroke-width",sw);
+    cst.textContent=label;cst.setAttribute("class",big?"cst big":"cst");cst.setAttribute("fill",lcol);
+  });
+  front.forEach(s=>SVG.appendChild(GROUP[s]));
+  [0,1].forEach(pi=>{const tk=document.getElementById("tok_"+pi);const st=G.token[pi];
+    tk.setAttribute("cx",CTR[st][0]+(pi?11:-11));tk.setAttribute("cy",CTR[st][1]+17);tk.style.display="";SVG.appendChild(tk);});}
+function render(){
+  paintBoard();const p=G.activeIdx;
+  const pw=document.getElementById('players');pw.innerHTML='';
+  [0,1].forEach(i=>{const sc=connectedScore(i);const d=document.createElement('div');
+    d.className=`pcard p${i+1}${p===i?' active':''}`;
+    d.innerHTML=`<div class="pname">${pname(i)} · on ${G.token[i]}</div>
+      <div class="pstat">Currency <b>${G.currency[i]}</b> · Claimed <b>${claimedCount(i)}</b></div>
+      <div class="pstat">Connected cluster <b>${sc.count}</b></div>`;pw.appendChild(d);});
+  document.getElementById('turnBadge').textContent=`Turn ${G.turn} / 20`;
+  document.getElementById('dieView').textContent=G.phase==='move'?G.stepsLeft:'';
+  const labels={roll:'Phase 1 · Roll or Hold',move:'Phase 2 · Move (pick route)',blocked:'Phase 2 · Blocked'};
+  document.getElementById('phaseLabel').textContent=labels[G.phase]||G.phase;
+  const ctr=document.getElementById('controls'),ins=document.getElementById('instruction');ctr.innerHTML='';
+  if(REPLAYMODE){replayControls(ins,ctr);}
+  else if(ONLINE&&G.activeIdx!==MYIDX){ins.innerHTML='⏳ Opponent move — waiting…';}
+  else if(isBot(p)){ins.innerHTML='🤖 Player 2 (AI) is taking its turn…';}
+  else if(G.phase==='roll'){
+    ins.innerHTML='<b>Roll</b> to move your token (you pick the route, 1 step at a time), or <b>Hold</b> to bank +5 currency and end your turn.';
+    ctr.innerHTML=`<div class="btnrow"><button class="primary" onclick="doRoll()">Roll d3 (move)</button><button class="warn" onclick="doHold()">Hold (+5 coins)</button></div>`;
+  }else if(G.phase==='move'){
+    ins.innerHTML=`<b>${G.stepsLeft}</b> step${G.stepsLeft===1?'':'s'} left from <b>${G.token[p]}</b>. Click a <span style="color:var(--step)">blue</span> tile to step (<span style="color:var(--danger)">orange = opponent, −1</span>), or a <span style="color:var(--good)">green</span> tile to choose claim or pass.`;
+    {let html='';const t=G.token[p];
+     if(G.owner[t]===oppOf(p)){const c=stealCostFor(t);
+       if(stealLocked(t))html+=`<button disabled style="width:100%;margin-bottom:6px;">🗡️ ${t} just changed hands — can't seize yet</button>`;
+       else if(G.currency[p]>=c)html+=`<button class="warn" style="width:100%;margin-bottom:6px;" onclick="doSteal()">🗡️ Seize ${t} for $${c} (ends turn)</button>`;
+       else html+=`<button disabled style="width:100%;margin-bottom:6px;">🗡️ Seize ${t} needs $${c}</button>`;}
+     html+=`<button onclick="endTurn()">End turn here</button>`;ctr.innerHTML=html;}
+  }else if(G.phase==='blocked'){
+    ins.innerHTML=`No legal move/claim available. <b>Blocked Resolution</b>: roll to swap out one Flop entry (max 2 in a row; streak ${G.blockedStreak[p]}).`;
+    ctr.innerHTML=`<button class="primary" onclick="doBlocked()">Roll to swap a Flop entry</button>`;
+  }
+  const cp=(ONLINE?MYIDX:p);const cc=document.getElementById('contractCard');const ct=G.contract[cp];
+  if(REPLAYMODE){cc.innerHTML='<div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🎯 Secret Contract</b></div><div class="hint">Hidden during replay.</div>';}else if(isBot(p)){cc.innerHTML='<div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🎯 Secret Contract</b><span class="badge">P2 · AI</span></div><div class="hint">Hidden — the AI keeps its own contract secret.</div>';}else{
+  let ch=`<div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🎯 Secret Contract</b><span class="badge">${pname(cp)} only</span></div>`;
+  if(!ct){ch+=`<div class="hint">No contract right now — every state is claimed or in the Flop. You'll get one when a state frees up.</div>`;}
+  else if(revealStage===0){ch+=`<div class="hint">A private target only you can claim — your opponent can't see, claim, or steal it.</div><button onclick="rcReveal()" style="width:100%;margin-top:8px;">🔒 Reveal my contract</button>`;}
+  else if(revealStage===1){ch+=`<div class="hint" style="color:var(--gold)">⚠️ Make sure your opponent isn't looking at the screen, then confirm.</div><div class="btnrow" style="margin-top:8px;"><button class="primary" onclick="rcShow()">Show card</button><button onclick="rcHide()">Cancel</button></div>`;}
+  else{const onIt=G.token[cp]===ct;
+    ch+=`<div class="hint">Your contract: <b style="color:var(--good);font-size:15px;">${ct}</b> ($${COST[ct]}). Walk your token onto it, then buy it here — only the purchase reveals it to your opponent. Not marked on the board; remember it by name.</div>`;
+    if(onIt&&canBuyContract(cp)&&(!ONLINE||G.activeIdx===cp))ch+=`<button class="primary" style="width:100%;margin-top:8px;" onclick="doBuyContract()">🎯 Buy ${ct} for $${COST[ct]} (ends turn)</button>`;
+    else if(onIt&&G.phase==='move')ch+=`<button disabled style="width:100%;margin-top:8px;">Need $${COST[ct]} to buy ${ct}</button>`;
+    else ch+=`<div class="hint" style="margin-top:6px;color:var(--step)">You're not on it yet — walk your token there, then buy.</div>`;
+    ch+=`<button onclick="rcHide()" style="width:100%;margin-top:6px;">Hide</button>`;}
+  cc.innerHTML=ch;}
+  const dist=distFromToken(p);const fc=document.getElementById('flopChips');fc.innerHTML='';
+  G.flop.forEach(s=>{const el=document.createElement('div');el.className='chip';
+    el.innerHTML=`<b>${s}</b> $${COST[s]} <span class="d">·${dist[s]} away</span>`;fc.appendChild(el);});
+  document.getElementById('log').innerHTML=G.log.join('<br>');}
+/* ===================== ONLINE MULTIPLAYER (host-authoritative relay) ===================== */
+var ONLINE=false, MYROLE=null, MYIDX=0, socket=null, ROOMCODE=null;
+var RAW={doRoll:doRoll,doHold:doHold,doStep:doStep,doClaim:doClaim,doSteal:doSteal,doBuyContract:doBuyContract,doBlocked:doBlocked,endTurn:endTurn};
+var RAWrender=render;
+function sanitizeForGuest(){var pub=JSON.parse(JSON.stringify(G));pub.contract=[null,G.contract[1]];return pub;}
+render=function(){RAWrender();if(ONLINE&&MYROLE==='host'&&socket){socket.emit('state',sanitizeForGuest());}};
+function netDispatch(fn,args){
+  if(!ONLINE){return RAW[fn].apply(null,args);}
+  if(MYROLE==='host'){return RAW[fn].apply(null,args);}
+  if(!G||G.activeIdx!==MYIDX)return;
+  socket.emit('action',{fn:fn,args:args});
+}
+doRoll=function(){netDispatch('doRoll',[]);};
+doHold=function(){netDispatch('doHold',[]);};
+doStep=function(s){netDispatch('doStep',[s]);};
+doClaim=function(s){netDispatch('doClaim',[s]);};
+doSteal=function(){netDispatch('doSteal',[]);};
+doBuyContract=function(){netDispatch('doBuyContract',[]);};
+doBlocked=function(){netDispatch('doBlocked',[]);};
+endTurn=function(){netDispatch('endTurn',[]);};
+function onlineMsg(t){var m=document.getElementById('onlineMsg');if(m)m.textContent=t;}
+function noIo(){if(typeof io==='undefined'){document.getElementById('overlay').style.display='flex';onlineMsg('Online needs the server: open this page at the server address (npm start, or your Render URL), not as a local file.');return true;}return false;}
+function connectSocket(){if(socket)return;socket=io();
+  socket.on('opponentJoined',function(){ONLINE=true;MYROLE='host';MYIDX=0;document.getElementById('overlay').style.display='none';G=newState();REPLAY=[];log('Online game '+ROOMCODE+' — you are Player 1 (host).');startTurn();});
+  socket.on('state',function(st){G=st;document.getElementById('overlay').style.display='none';if(G.turn>20){endGameView();}else{RAWrender();}});
+  socket.on('action',function(a){if(MYROLE!=='host'||!G)return;if(G.activeIdx!==1)return;if(RAW[a.fn])RAW[a.fn].apply(null,a.args||[]);});
+  socket.on('replay',function(r){REPLAY=r||[];});
+  socket.on('opponentLeft',function(){document.getElementById('overlay').style.display='flex';document.querySelector('#overlay .modal').innerHTML='<h2>Opponent left</h2><p>Your opponent disconnected.</p><button class="primary" style="margin-top:14px;width:100%;" onclick="location.reload()">New game</button>';});
+}
+function onlineCreate(){if(noIo())return;connectSocket();socket.emit('create',function(res){if(res&&res.ok){ROOMCODE=res.code;document.querySelector('#overlay .modal').innerHTML='<h2>Online game</h2><p>Share this code with your opponent:</p><div style="font-size:34px;font-weight:800;letter-spacing:8px;color:var(--gold);margin:12px 0;">'+res.code+'</div><p id="onlineMsg" style="color:var(--dim)">Waiting for an opponent to join…</p>';}});}
+function onlineJoin(){if(noIo())return;var code=(document.getElementById('joinCode').value||'').toUpperCase().trim();if(code.length!==4){onlineMsg('Enter the 4-character code.');return;}connectSocket();socket.emit('join',code,function(res){if(res&&res.ok){ONLINE=true;MYROLE='guest';MYIDX=1;ROOMCODE=res.code;document.querySelector('#overlay .modal').innerHTML='<h2>Joined '+res.code+'</h2><p style="color:var(--dim)">You are Player 2. Waiting for the host to start…</p>';}else{onlineMsg((res&&res.error)||'Could not join.');}});}
+function endGameView(){RAWrender();var a=connectedScore(0),b=connectedScore(1);var o=[statesOf(0).length,statesOf(1).length],sp=G.spent;var w;if(a.count!==b.count)w=a.count>b.count?0:1;else if(o[0]!==o[1])w=o[0]>o[1]?0:1;else if(sp[0]!==sp[1])w=sp[0]>sp[1]?0:1;else w=-1;document.getElementById('overlay').style.display='flex';document.querySelector('#overlay .modal').innerHTML='<h2>'+(w<0?'Draw':('Player '+(w+1)+' wins'))+'</h2><p><b>Player 1</b>: cluster '+a.count+' · '+o[0]+' states<br><b>Player 2</b>: cluster '+b.count+' · '+o[1]+' states</p><button style="width:100%;margin-top:10px;" onclick="downloadReplay()">⬇ Download this game</button><button class="primary" style="margin-top:8px;width:100%;" onclick="location.reload()">New game</button>';}
+
+/* ===================== REPLAY (turn-by-turn) ===================== */
+var REPLAY=[], REPLAYMODE=false, FRAMES=[], FRAMEIDX=0, replayTimer=null;
+function snap(){return JSON.parse(JSON.stringify(G));}
+function downloadReplay(){
+  if(!REPLAY||!REPLAY.length){alert('No replay was recorded for this game.');return;}
+  var a=connectedScore(0),b=connectedScore(1);
+  var data={type:'circuit-replay',v:1,savedAt:Date.now(),result:{p1cluster:a.count,p2cluster:b.count,turns:20},frames:REPLAY};
+  var blob=new Blob([JSON.stringify(data)],{type:'application/json'});var el=document.createElement('a');
+  el.href=URL.createObjectURL(blob);el.download='circuit-replay-'+Date.now()+'.json';document.body.appendChild(el);el.click();
+  setTimeout(function(){URL.revokeObjectURL(el.href);el.remove();},100);
+}
+function enterReplay(frames){
+  if(!frames||!frames.length){alert('That file has no replay frames.');return;}
+  REPLAYMODE=true;ONLINE=false;FRAMES=frames;FRAMEIDX=0;
+  document.getElementById('overlay').style.display='none';showFrame(0);
+}
+function showFrame(i){if(i<0)i=0;if(i>=FRAMES.length)i=FRAMES.length-1;FRAMEIDX=i;G=JSON.parse(JSON.stringify(FRAMES[i]));RAWrender();}
+function replayPrev(){if(replayTimer){clearInterval(replayTimer);replayTimer=null;}showFrame(FRAMEIDX-1);}
+function replayNext(){if(replayTimer){clearInterval(replayTimer);replayTimer=null;}showFrame(FRAMEIDX+1);}
+function replayPlay(){
+  if(replayTimer){clearInterval(replayTimer);replayTimer=null;showFrame(FRAMEIDX);return;}
+  if(FRAMEIDX>=FRAMES.length-1)FRAMEIDX=0;
+  replayTimer=setInterval(function(){if(FRAMEIDX>=FRAMES.length-1){clearInterval(replayTimer);replayTimer=null;showFrame(FRAMEIDX);}else{showFrame(FRAMEIDX+1);}},900);
+}
+function replayExit(){if(replayTimer){clearInterval(replayTimer);replayTimer=null;}REPLAYMODE=false;location.reload();}
+function replayControls(ins,ctr){
+  var f=FRAMES[FRAMEIDX]||{};var playing=!!replayTimer;
+  ins.innerHTML='\U0001F4FA Replay — turn <b>'+(f.turn||'?')+'</b> · frame '+(FRAMEIDX+1)+' / '+FRAMES.length;
+  ctr.innerHTML='<div class="btnrow"><button onclick="replayPrev()">◀ Prev</button><button class="primary" onclick="replayPlay()">'+(playing?'⏸ Pause':'▶ Play')+'</button><button onclick="replayNext()">Next ▶</button></div><button onclick="replayExit()" style="width:100%;margin-top:6px;">Exit replay</button>';
+}
+
+buildBoard();
+</script>
+</body>
+</html>

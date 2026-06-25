@@ -1,0 +1,12 @@
+# Render.com Blueprint — deploy CIRCUIT's server in one step.
+# On render.com: New → Blueprint → connect this repo. (Or set it up manually as a Web Service:
+# Runtime Node, Build "npm install", Start "npm start", Free plan.)
+services:
+  - type: web
+    name: circuit
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    # Optional: to enable the OpenAI opponent online, add OPENAI_API_KEY in the Render dashboard
+    # (Settings → Environment). Online human-vs-human play needs no key.
