@@ -2,6 +2,16 @@
 
 All notable design and gameplay changes, newest first. (Versions track the design iterations recorded in the GDD.)
 
+## v1.3 — Learnability & UX pass
+- **Configurable turn count:** a *Number of turns* input on the start screen (default 20). In online games the **host's** value is authoritative. All docs and in-game text now reference this instead of a hardcoded 20.
+- **Steal count fix:** the side-panel readout now shows **total states owned** rather than a "claimed" figure that special-cased the home tile — so seizing a home tile no longer leaves the count looking frozen.
+- **Always-visible Flop:** Flop tiles carry a persistent thin **green outline** in every phase; the bright/thick green still marks the one you can claim *right now* (two-tier cue).
+- **Movement guidance:** clicking a non-adjacent state (whether in the Flop/contract or not) now flashes "move one step at a time" instead of doing nothing.
+- **Forced end of turn:** when ending is the only legal action, the board is covered with a single **End turn** button so play can't stall.
+- **Low-coin flash** when the active player drops under $5; **end-of-turn summary** line (spent / states / cluster).
+- **Secret Contract** is now always shown to its owner in **online & vs-AI** (with a panel glow when you're standing on it); hot-seat keeps the manual Reveal step.
+- **Visual:** thicker blue step outlines; lighter $2 tier colour (clearer vs $3). The in-app **History** panel was removed (the JSON save still carries results); the rulebook is shorter and the Rules button is highlighted.
+
 ## v1.2 — Game replays
 - When a game ends you can **⬇ Download this game** as a `circuit-replay-*.json` (turn-by-turn snapshots), and later **Load** it to watch it back with Prev / Play / Next controls (board read-only). Works for local and online games (online host records and shares it with the guest). Built into `index.html`.
 - Verified: replays record/step/export correctly (132 assertions; ~41 frames per 20-turn game).

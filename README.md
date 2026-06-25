@@ -2,7 +2,7 @@
 
 **A strategic state-control board game for two players, in a single HTML file.**
 
-CIRCUIT is a 2-player hot-seat strategy game played on a fixed map of 25 states. You start with a small budget and no income — every move and every claim spends it down. Over 20 turns you build the largest **connected cluster** of states, racing, blocking, and stealing your way across a board that's only a few moves wide.
+CIRCUIT is a 2-player hot-seat strategy game played on a fixed map of 25 states. You start with a small budget and no income — every move and every claim spends it down. Over a set number of turns (default 20) you build the largest **connected cluster** of states, racing, blocking, and stealing your way across a board that's only a few moves wide.
 
 No installation, no build step, no dependencies. It's one self-contained `index.html`.
 
@@ -17,7 +17,7 @@ Two players share one screen (hot-seat) and pass the device each turn.
 
 ## How to play
 
-- **Goal.** Build the biggest single **connected cluster** of states over 20 turns. You can own several separate groups, but only your largest connected cluster counts. Ties break by total states owned, then by total coins spent buying states; if still tied, it's a draw.
+- **Goal.** Build the biggest single **connected cluster** of states over the chosen number of turns (default 20). You can own several separate groups, but only your largest connected cluster counts. Ties break by total states owned, then by total coins spent buying states; if still tied, it's a draw.
 - **Money.** You begin with 15 coins. The only income is **Hold** (+5), and coins are **capped at 20** to prevent hoarding. Spend carefully.
 - **Each turn, pick one:**
   - **Roll a d3** and move your token 1–3 steps across borders, choosing the route one tile at a time. Claim the unclaimed Flop tile you land on (that ends your turn).
@@ -25,13 +25,17 @@ Two players share one screen (hot-seat) and pass the device each turn.
 - **Movement costs.** Crossing your own or empty land is free. Stepping onto an **opponent tile costs 1 coin each**. You can never make a move you can't fully pay for.
 - **The Flop.** Only the **3** states in the Flop are claimable at any time; claiming one refills it.
 - **Stealing.** Step onto an opponent's tile and pay **double its price** to seize it — great for splitting their cluster. A tile that just changed hands can't be stolen back next turn.
-- **Secret Contracts.** You always hold one **private** target state, visible only to you. Walk your token onto it (it's unmarked — remember it by name), then press **Reveal → Show → Buy** in your panel to claim it; only that deliberate purchase reveals it. It never appears in the Flop and your opponent can't claim or steal it. Buying draws a new hidden one.
+- **Secret Contracts.** You always hold one **private** target state, visible only to you. Walk your token onto it (it's unmarked — remember it by name), then **Buy** it from your panel; only that deliberate purchase reveals it. In **online** and **vs-AI** games your contract is always shown (the opponent can never see it anyway); in **hot-seat** you press **Reveal → Show → Buy** so a player sharing the screen can't peek. It never appears in the Flop and your opponent can't claim or steal it. Buying draws a new hidden one.
 
 A full in-game **Rules** panel is available from the button in the top-right.
 
-## Saving & history
+## Saving
 
-Use **💾 Save** to download a `circuit-save.json` (your in-progress game plus results history), and **📂 Load** to read one back — there's also a *Load saved game* button on the start screen. Finished games show under the **📜 History** button during a session and travel inside the save file. No browser storage is used: your data lives in a JSON file you control.
+Use **💾 Save** to download a `circuit-save.json` (your in-progress game plus results history), and **📂 Load** to read one back — there's also a *Load saved game* button on the start screen. Finished-game results still travel inside that JSON file; there's no separate in-app History panel. No browser storage is used: your data lives in a JSON file you control.
+
+## Turn count
+
+The start screen has a **Number of turns** input (default **20**) next to the player names. In **online** games the **host's** value is authoritative — the guest inherits it.
 
 ## AI opponent (Player 2)
 

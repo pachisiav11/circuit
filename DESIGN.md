@@ -4,7 +4,7 @@ A concise, readable summary of the rules and the reasoning behind them. The full
 
 ## Overview
 
-CIRCUIT is a 2-player hot-seat strategy game on a fixed map of **25 states** drawn as irregular Voronoi polygons. Two states are adjacent if they share a border; adjacency is derived directly from those borders. Players start on opposite edge states and, over **20 turns**, build the largest **connected cluster** of states.
+CIRCUIT is a 2-player hot-seat strategy game on a fixed map of **25 states** drawn as irregular Voronoi polygons. Two states are adjacent if they share a border; adjacency is derived directly from those borders. Players start on opposite edge states and, over a configurable number of turns (**default 20**, set on the start screen — in online games the host's value is used), build the largest **connected cluster** of states.
 
 ## The economy
 
@@ -26,15 +26,15 @@ CIRCUIT is a 2-player hot-seat strategy game on a fixed map of **25 states** dra
 - **The Flop.** Exactly **3** claimable states are public at any time; claiming or swapping refills from the pool. Small Flop = high contention and fast turnover.
 - **Movement (d3).** The board is ~6 tiles wide, so a d3 makes crossing it a multi-turn commitment — positioning matters, and a single roll can't teleport you anywhere.
 - **Stealing.** Pay 2× to take an opponent tile; ideal for splitting their cluster by capturing a bridge. A just-taken tile is locked from being stolen back for one turn (no ping-pong).
-- **Secret Contracts.** Each player holds one private target state, hidden from the opponent. Contract tiles are walkable and unmarked; to claim one you stand on it and deliberately press Reveal → Show → Buy — only the purchase reveals it, and passing over it is silent. It's removed from the shared pool (never in the Flop, never claimable/stealable by the opponent). Same price as a Flop tile; buying draws a replacement immediately. Pure-random selection; cannot be discarded.
+- **Secret Contracts.** Each player holds one private target state, hidden from the opponent. Contract tiles are walkable and unmarked; to claim one you stand on it and deliberately Buy it — only the purchase reveals it, and passing over it is silent. (Online and vs-AI the contract is shown to its owner at all times, since the opponent can never see it; hot-seat keeps the Reveal → Show → Buy step so a shared screen stays secret.) It's removed from the shared pool (never in the Flop, never claimable/stealable by the opponent). Same price as a Flop tile; buying draws a replacement immediately. Pure-random selection; cannot be discarded.
 
-## Save & history
+## Save
 
-Saving uses a **JSON file** (no browser storage): **Save** downloads `circuit-save.json` containing the in-progress game and the results history; **Load** restores it (and resumes the game if one was in progress). History (results only, last 50) is held in memory during a session and travels in the save file.
+Saving uses a **JSON file** (no browser storage): **Save** downloads `circuit-save.json` containing the in-progress game and the results history; **Load** restores it (and resumes the game if one was in progress). Results (last 50) still ride inside the save file — there is no separate in-app History panel; the JSON is the record of truth.
 
 ## Winning
 
-After turn 20, the player with the most states in a single **connected cluster** wins. Tiebreakers, in order: most total states owned → most coins spent buying states → otherwise a draw.
+After the final turn, the player with the most states in a single **connected cluster** wins. Tiebreakers, in order: most total states owned → most coins spent buying states → otherwise a draw.
 
 ## Design intent (short version)
 
