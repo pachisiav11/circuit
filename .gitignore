@@ -1,0 +1,16 @@
+# scratch / generated images
+_*.png
+
+# Office lock files
+~$*
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# secrets & deps (AI server)
+.env
+node_modules/
+
+# redundant working copy (push the main folder, not this duplicate)
+git_upload/
