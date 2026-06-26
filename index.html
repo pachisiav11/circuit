@@ -625,7 +625,7 @@ function paintBoard(){
   const route=(G.phase==='move'&&!REPLAYMODE)?routeReach(p,Math.max(0,G.stepsLeft-1)):null;
   ALL.forEach(s=>{const c=document.getElementById("c_"+s),cst=document.getElementById("cost_"+s);
     let fill=TIER[COST[s]].fill,stk=TIER[COST[s]].stk,sw=2;
-    if(G.flop.includes(s)&&G.owner[s]===undefined){stk="#34d399";sw=9;} // persistent thin-green Flop outline (all phases)
+    if(G.flop.includes(s)&&G.owner[s]===undefined){stk="#34d399";sw=9;front.push(s);} // persistent thin-green Flop outline (all phases)
     // owned states take the owning player's colour (brighter when connected)
     if(G.owner[s]===0){fill=sc0.set.has(s)?"#5aa0ff":"#2e547e";stk="#bcd8ff";}
     else if(G.owner[s]===1){fill=sc1.set.has(s)?"#ff6b6b":"#7e3535";stk="#ffc4c4";}
