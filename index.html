@@ -11,6 +11,13 @@
     --bg:#0c1018; --panel:#141b27; --panel2:#1c2636; --line:#2b3a52;
     --ink:#e8eef7; --dim:#8ea0b8; --p1:#5aa0ff; --p2:#ff6b6b;
     --gold:#f5b942; --good:#34d399; --acc:#7dd3fc; --step:#5cc8ff; --danger:#ff9a4d;
+    --hover:#26344a;
+  }
+  html[data-theme="light"]{
+    --bg:#f3f5f9; --panel:#ffffff; --panel2:#edf0f6; --line:#d7dde6;
+    --ink:#1b2430; --dim:#5b6b80; --p1:#1d6fe0; --p2:#d6402f;
+    --gold:#a8740a; --good:#0f9d68; --acc:#0f86b8; --step:#1f8fd1; --danger:#c2580a;
+    --hover:#dde4ee;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -32,7 +39,7 @@
   .pstat b{color:var(--ink);}
   .badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;background:#0a0f17;color:var(--dim);}
   button{font-family:inherit;cursor:pointer;border-radius:8px;padding:9px 11px;font-size:13px;font-weight:600;background:var(--panel2);color:var(--ink);border:1px solid var(--line);transition:.12s;}
-  button:hover:not(:disabled){background:#26344a;}
+  button:hover:not(:disabled){background:var(--hover);}
   button:disabled{opacity:.4;cursor:not-allowed;}
   button.primary{background:#2563eb;border-color:#2563eb;color:#fff;}
   button.warn{background:#3a2a12;border-color:var(--gold);color:var(--gold);}
@@ -73,6 +80,7 @@
     align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:30;border-radius:14px;text-align:center;padding:24px;}
   #endCover .ec-msg{font-size:15px;color:var(--ink);max-width:340px;line-height:1.5;}
 </style>
+<script>(function(){try{var t=localStorage.getItem('circuit-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 </head>
 <body>
 <div id="app">
@@ -87,6 +95,7 @@
     <div class="row" style="align-items:flex-start;">
       <h1>CIRCUIT<small>STRATEGIC STATE CONTROL · HOT-SEAT</small></h1>
       <div style="display:flex;flex-direction:column;gap:6px;flex:0 0 auto;">
+        <button id="themeToggle" onclick="toggleTheme()" style="padding:6px 10px;" title="Toggle light / dark mode">🌙</button>
         <button class="primary" onclick="showRules()" style="padding:6px 10px;">📖 Rules</button>
         <button onclick="saveToFile()" style="padding:6px 10px;">💾 Save</button>
         <button onclick="document.getElementById('loadFile').click()" style="padding:6px 10px;">📂 Load</button>
@@ -136,6 +145,7 @@
     <p>Each turn, <b>Roll</b> a d3 then move your token that many steps — one adjacent state at a time, <b>you pick the route</b>.
     You lose <b>1 currency for every opponent tile</b> you pass through or stop on. Move onto an unclaimed Flop state to claim it, which ends your turn.
     Or <b>Hold</b> to bank <b>+5 currency</b> and end your turn without moving.</p>
+    <p style="color:var(--acc)">🔄 The Flop always holds 3 open tiles — claim one and it's immediately replaced, so fresh options keep appearing all game.</p>
     <p style="color:var(--gold)">Hot-seat: two humans share this screen. Pass the device each turn.</p>
     <!-- Player Name Inputs -->
     <div id="localNamePanel" style="margin-top:14px; text-align:left; background:var(--panel2); padding:12px; border-radius:10px; border:1px solid var(--line); display:flex; flex-direction:column; gap:10px;">
@@ -179,6 +189,7 @@
     <p style="color:var(--ink);"><b>🎲 Your turn — pick one:</b><br>
     • <b>Roll d3</b> → move 1–3 steps across borders, one tile at a time (you pick the route). Land on a green <b>Flop</b> tile and a popup lets you <b>Claim</b> (ends turn) or pass through.<br>
     • <b>Hold</b> → bank +5 coins, end turn.</p>
+    <p style="color:var(--ink);"><b>🔄 Flop refills.</b> The Flop always shows 3 unclaimed tiles. The moment one is claimed, a new one is drawn in its place — it never runs dry.</p>
     <p style="color:var(--ink);"><b>🚶 Tolls.</b> Your land &amp; empty land are free to cross; each step onto an <span style="color:var(--danger)">opponent tile costs 1 coin</span>.</p>
     <p style="color:var(--ink);"><b>🟩 Board colours:</b> <span style="color:var(--good)">green outline</span> = a Flop tile (claimable) · <span style="color:var(--step)">blue</span> = a step you can take · <span style="color:var(--danger)">orange</span> = opponent tile (−1) · <span style="color:#f5e05a">yellow</span> = reachable Flop tile you can't yet afford.</p>
     <p style="color:var(--ink);"><b>🗡️ Steal.</b> Stand on an opponent tile and pay <b>double its price</b> to seize it (ends turn) — great for splitting their cluster. Can't be stolen back the very next turn.</p>
@@ -192,6 +203,12 @@
 <script>
 function showRules(){document.getElementById('rules').style.display='flex';}
 function hideRules(){document.getElementById('rules').style.display='none';}
+/* ===================== THEME (light / dark toggle) ===================== */
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);
+  try{localStorage.setItem('circuit-theme',t);}catch(e){}
+  var b=document.getElementById('themeToggle');if(b)b.textContent=t==='light'?'☀️':'🌙';}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');}
+applyTheme(document.documentElement.getAttribute('data-theme')||'dark');
 /* ===================== MAP DATA ===================== */
 const COST={GRAIL:8,HOLT:6,IRVIK:6,CORR:6,WELD:6,FENN:5,JORA:5,KEST:5,LORN:5,ESKAR:5,
   BRECK:4,DORNE:4,TAVE:4,OREL:4,VESS:4,PELL:4,AVEN:3,CALLUM:3,MAVE:3,VALE:3,
@@ -327,7 +344,7 @@ function startTurn(){if(!REPLAYMODE)REPLAY.push(snap());G.die=null;G.stepsLeft=0
   if(G.contract[G.activeIdx]==null&&freeStates().length)drawContract(G.activeIdx); // safety regrant if a state has freed up
   G.turnStart={p:G.activeIdx,currency:G.currency[G.activeIdx],states:statesOf(G.activeIdx).length};
   log(`<span class="me">${pname(G.activeIdx)}</span> — turn ${G.turn}. Currency ${G.currency[G.activeIdx]}.`);render();
-  maybeFlashLowMoney();}
+  maybeFlashLowMoney();maybeFlashGameStartHints();}
 function maybeFlashLowMoney(){var el=document.getElementById('moneyFlash');if(!el)return;
   var p=G.activeIdx,mine=(!isBot(p))&&(!ONLINE||G.activeIdx===MYIDX)&&!REPLAYMODE;
   if(mine&&G.currency[p]<5){el.style.display='block';clearTimeout(el._t);el._t=setTimeout(function(){el.style.display='none';},3200);}
@@ -553,9 +570,17 @@ function startGame(){G=newState();
 
 const NS="http://www.w3.org/2000/svg";let SVG=null,GROUP={};
 let pendingClaim=null;
-function toast(msg){var el=document.getElementById('genToast');
-  if(!el){el=document.createElement('div');el.id='genToast';el.style.cssText='position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:85;background:#13233a;border:1px solid var(--step);color:#dbeeff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.5);max-width:90vw;text-align:center;';document.body.appendChild(el);}
-  el.innerHTML=msg;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(function(){el.style.display='none';},2800);}
+function toast(msg,dur){var el=document.getElementById('genToast');
+  if(!el){el=document.createElement('div');el.id='genToast';el.style.cssText='position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:85;background:#13233a;border:1px solid var(--step);color:#dbeeff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.5);max-width:90vw;text-align:center;line-height:1.5;';document.body.appendChild(el);}
+  el.innerHTML=msg;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(function(){el.style.display='none';},dur||2800);}
+// once per player's first turn: a quick reminder the Flop refills, and a generic nudge to check the secret contract
+// (the contract itself is never named here — hot-seat secrecy stays intact)
+function maybeFlashGameStartHints(){
+  if(!G||G.turn!==1||REPLAYMODE)return;
+  var p=G.activeIdx,mine=(!isBot(p))&&(!ONLINE||p===MYIDX);
+  if(!mine)return;
+  toast('🔄 The Flop refills the instant a tile is claimed.<br>🎯 Heads up — you have a secret contract waiting in your panel!',4500);
+}
 function onCellClick(s){if(REPLAYMODE)return;if(!G||G.phase!=='move')return;const p=G.activeIdx;if(isBot(p))return;if(ONLINE&&G.activeIdx!==MYIDX)return;
   if(canClaim(s,p)){openClaimPrompt(s);return;}   // affordable Flop tile → ask claim vs pass (never auto-claim)
   if(isStep(s,p)){doStep(s);return;}
