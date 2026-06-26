@@ -625,7 +625,7 @@ function paintBoard(){
   const route=(G.phase==='move'&&!REPLAYMODE)?routeReach(p,Math.max(0,G.stepsLeft-1)):null;
   ALL.forEach(s=>{const c=document.getElementById("c_"+s),cst=document.getElementById("cost_"+s);
     let fill=TIER[COST[s]].fill,stk=TIER[COST[s]].stk,sw=2;
-    if(G.flop.includes(s)&&G.owner[s]===undefined){stk="#34d399";sw=3;} // persistent thin-green Flop outline (all phases)
+    if(G.flop.includes(s)&&G.owner[s]===undefined){stk="#34d399";sw=9;} // persistent thin-green Flop outline (all phases)
     // owned states take the owning player's colour (brighter when connected)
     if(G.owner[s]===0){fill=sc0.set.has(s)?"#5aa0ff":"#2e547e";stk="#bcd8ff";}
     else if(G.owner[s]===1){fill=sc1.set.has(s)?"#ff6b6b":"#7e3535";stk="#ffc4c4";}
@@ -636,17 +636,17 @@ function paintBoard(){
       else{stk="#ffffff";sw=4.5;}
     }else if(G.phase==='move' && !REPLAYMODE){
       if(canClaim(s,p)){                              // adjacent + affordable FLOP tile → solid green (contracts are NOT marked — remember by name)
-        fill="#1f7a4d";stk="#5ff0a8";sw=4.5;c.classList.add('clickable');front.push(s);
+        fill="#1f7a4d";stk="#5ff0a8";sw=13.5;c.classList.add('clickable');front.push(s);
         label="Claim for $"+Math.max(0,COST[s]-discount());big=true;lcol="#eafff5";
       }else if(flopReachable(s,p,route)){             // reachable via an affordable route → green + price shown
-        fill="#1f5c3e";stk="#5ff0a8";sw=3.5;front.push(s);
+        fill="#1f5c3e";stk="#5ff0a8";sw=10.5;front.push(s);
         label="$"+Math.max(0,COST[s]-discount());big=true;lcol="#eafff5";
       }else if(flopReachUnaff(s,p,route)){            // in reach but unaffordable → yellow (no claim option)
         fill="#5c4e1f";stk="#f5e05a";sw=3.5;front.push(s);
         label="$"+Math.max(0,COST[s]-discount());big=true;lcol="#fff7d6";
       }else if(isStep(s,p)){                          // steppable route tile (unaffordable opp tiles excluded)
         const opp=G.owner[s]===oppOf(p);
-        stk=opp?"#ff9a4d":"#5cc8ff";sw=opp?4.5:6;c.classList.add('clickable');front.push(s);
+        stk=opp?"#ff9a4d":"#5cc8ff";sw=opp?4.5:18;c.classList.add('clickable');front.push(s);
         if(opp){const sc=stealCostFor(s);
           label=(G.currency[p]>=1+sc&&!stealLocked(s))?`−1 · seize $${sc}`:"Step −1";lcol="#ffd9b8";}
       }
