@@ -612,7 +612,7 @@ function buildBoard(){
     const poly=document.createElementNS(NS,"polygon");poly.setAttribute("points",CELL[s].map(p=>p.join(",")).join(" "));
     poly.setAttribute("class","cell");poly.id="c_"+s;poly.addEventListener("click",()=>onCellClick(s));g.appendChild(poly);
     const lbl=document.createElementNS(NS,"text");lbl.setAttribute("x",CTR[s][0]);lbl.setAttribute("y",CTR[s][1]-2);
-    lbl.setAttribute("class","lbl");lbl.textContent=s;g.appendChild(lbl);
+    lbl.setAttribute("class","lbl");lbl.id="lbl_"+s;lbl.textContent=s;g.appendChild(lbl);
     const cst=document.createElementNS(NS,"text");cst.setAttribute("x",CTR[s][0]);cst.setAttribute("y",CTR[s][1]+12);
     cst.setAttribute("class","cst");cst.id="cost_"+s;cst.textContent="$"+COST[s];g.appendChild(cst);
     svg.appendChild(g);});
@@ -623,7 +623,7 @@ function buildBoard(){
 function paintBoard(){
   if(!G)return;const p=G.activeIdx;const sc0=connectedScore(0),sc1=connectedScore(1);const front=[];
   const route=(G.phase==='move'&&!REPLAYMODE)?routeReach(p,Math.max(0,G.stepsLeft-1)):null;
-  ALL.forEach(s=>{const c=document.getElementById("c_"+s),cst=document.getElementById("cost_"+s);
+  ALL.forEach(s=>{const c=document.getElementById("c_"+s),cst=document.getElementById("cost_"+s),lbl=document.getElementById("lbl_"+s);
     let fill=TIER[COST[s]].fill,stk=TIER[COST[s]].stk,sw=2;
     if(G.flop.includes(s)&&G.owner[s]===undefined){stk="#34d399";sw=9;front.push(s);} // persistent thin-green Flop outline (all phases)
     // owned states take the owning player's colour (brighter when connected)
@@ -653,6 +653,7 @@ function paintBoard(){
     }
     c.setAttribute("fill",fill);c.setAttribute("stroke",stk);c.setAttribute("stroke-width",sw);
     cst.textContent=label;cst.setAttribute("class",big?"cst big":"cst");cst.setAttribute("fill",lcol);
+    lbl.setAttribute("fill",lcol);
   });
   front.forEach(s=>SVG.appendChild(GROUP[s]));
   [0,1].forEach(pi=>{const tk=document.getElementById("tok_"+pi);const st=G.token[pi];
