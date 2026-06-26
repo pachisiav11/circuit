@@ -610,11 +610,12 @@ function buildBoard(){
   t2.textContent="FIXED MAP — 25 STATES — 2 PLAYERS";svg.appendChild(t2);
   ALL.forEach(s=>{const g=document.createElementNS(NS,"g");GROUP[s]=g;
     const poly=document.createElementNS(NS,"polygon");poly.setAttribute("points",CELL[s].map(p=>p.join(",")).join(" "));
-    poly.setAttribute("class","cell");poly.id="c_"+s;poly.addEventListener("click",()=>onCellClick(s));g.appendChild(poly);
+    poly.setAttribute("class","cell");poly.id="c_"+s;poly.addEventListener("click",()=>onCellClick(s));
+    poly.setAttribute("fill",TIER[COST[s]].fill);poly.setAttribute("stroke",TIER[COST[s]].stk);poly.setAttribute("stroke-width",2);g.appendChild(poly);
     const lbl=document.createElementNS(NS,"text");lbl.setAttribute("x",CTR[s][0]);lbl.setAttribute("y",CTR[s][1]-2);
-    lbl.setAttribute("class","lbl");lbl.id="lbl_"+s;lbl.textContent=s;g.appendChild(lbl);
+    lbl.setAttribute("class","lbl");lbl.id="lbl_"+s;lbl.textContent=s;lbl.setAttribute("fill",TIER[COST[s]].tx);g.appendChild(lbl);
     const cst=document.createElementNS(NS,"text");cst.setAttribute("x",CTR[s][0]);cst.setAttribute("y",CTR[s][1]+12);
-    cst.setAttribute("class","cst");cst.id="cost_"+s;cst.textContent="$"+COST[s];g.appendChild(cst);
+    cst.setAttribute("class","cst");cst.id="cost_"+s;cst.textContent="$"+COST[s];cst.setAttribute("fill",TIER[COST[s]].tx);g.appendChild(cst);
     svg.appendChild(g);});
   [0,1].forEach(p=>{const tk=document.createElementNS(NS,"circle");tk.id="tok_"+p;
     tk.setAttribute("r",10);tk.setAttribute("fill","none");tk.setAttribute("stroke-width",4);
