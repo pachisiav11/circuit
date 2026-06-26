@@ -264,6 +264,7 @@ function newState(){
   const p2NameVal = (document.getElementById('p2NameInput') ? document.getElementById('p2NameInput').value.trim() : '') || 'Player 2';
   let mt=20;const ti=document.getElementById('turnsInput');
   if(ti){const v=parseInt(ti.value,10);if(!isNaN(v)&&v>=1&&v<=99)mt=v;}
+  else if(typeof PENDING_TURNS!=='undefined'&&PENDING_TURNS)mt=PENDING_TURNS;
   return {turn:1,activeIdx:order[0],order,currency:[15,15],owner,starts,token,flop,contract,maxTurns:mt,
     spent:[0,0],tick:0,stealLock:{},die:null,stepsLeft:0,moved:false,blockedStreak:[0,0],phase:'roll',log:[],
     turnStart:null,pnames:[p1NameVal, p2NameVal]};}
@@ -719,7 +720,7 @@ function render(){
     el.innerHTML=`<b>${s}</b> $${COST[s]} <span class="d">·${dist[s]} away</span>`;fc.appendChild(el);});
   document.getElementById('log').innerHTML=G.log.join('<br>');}
 /* ===================== ONLINE MULTIPLAYER (host-authoritative relay) ===================== */
-var ONLINE=false, MYROLE=null, MYIDX=0, socket=null, ROOMCODE=null, ONLINE_NAME='';
+var ONLINE=false, MYROLE=null, MYIDX=0, socket=null, ROOMCODE=null, ONLINE_NAME='', PENDING_TURNS=null;
 var RAW={doRoll:doRoll,doHold:doHold,doStep:doStep,doClaim:doClaim,doSteal:doSteal,doBuyContract:doBuyContract,doBlocked:doBlocked,endTurn:endTurn};
 var RAWrender=render;
 function sanitizeForGuest(){var pub=JSON.parse(JSON.stringify(G));pub.contract=[null,G.contract[1]];return pub;}
@@ -757,7 +758,9 @@ function connectSocket(){if(socket)return;socket=io();
   socket.on('replay',function(r){REPLAY=r||[];});
   socket.on('opponentLeft',function(){document.getElementById('overlay').style.display='flex';document.querySelector('#overlay .modal').innerHTML='<h2>Opponent left</h2><p>Your opponent disconnected.</p><button class="primary" style="margin-top:14px;width:100%;" onclick="location.reload()">New game</button>';});
 }
-function onlineCreate(){if(noIo())return;var myName = (document.getElementById('onlinePlayerName') ? document.getElementById('onlinePlayerName').value.trim() : '') || 'Player 1';ONLINE_NAME=myName;connectSocket();socket.emit('create',{ name: myName },function(res){if(res&&res.ok){ROOMCODE=res.code;document.querySelector('#overlay .modal').innerHTML='<h2>Online game</h2><p>Share this code with your opponent:</p><div style="font-size:34px;font-weight:800;letter-spacing:8px;color:var(--gold);margin:12px 0;">'+res.code+'</div><p id="onlineMsg" style="color:var(--dim)">Waiting for an opponent to join…</p>';}});}
+function onlineCreate(){if(noIo())return;var myName = (document.getElementById('onlinePlayerName') ? document.getElementById('onlinePlayerName').value.trim() : '') || 'Player 1';ONLINE_NAME=myName;
+  var tiv=document.getElementById('turnsInput');if(tiv){var v=parseInt(tiv.value,10);if(!isNaN(v)&&v>=1&&v<=99)PENDING_TURNS=v;}
+  connectSocket();socket.emit('create',{ name: myName },function(res){if(res&&res.ok){ROOMCODE=res.code;document.querySelector('#overlay .modal').innerHTML='<h2>Online game</h2><p>Share this code with your opponent:</p><div style="font-size:34px;font-weight:800;letter-spacing:8px;color:var(--gold);margin:12px 0;">'+res.code+'</div><p id="onlineMsg" style="color:var(--dim)">Waiting for an opponent to join…</p>';}});}
 function onlineJoin(){if(noIo())return;var code=(document.getElementById('joinCode').value||'').toUpperCase().trim();if(code.length!==4){onlineMsg('Enter the 4-character code.');return;}var myName = (document.getElementById('onlinePlayerName') ? document.getElementById('onlinePlayerName').value.trim() : '') || 'Player 2';ONLINE_NAME=myName;connectSocket();socket.emit('join',code,{ name: myName },function(res){if(res&&res.ok){ONLINE=true;MYROLE='guest';MYIDX=1;ROOMCODE=res.code;var hostName=res.hostName||'Player 1';document.querySelector('#overlay .modal').innerHTML='<h2>Joined '+res.code+'</h2><p style="color:var(--dim)">You are '+myName+'. Waiting for '+hostName+' to start…</p>';}else{onlineMsg((res&&res.error)||'Could not join.');}});}
 function endGameView(){RAWrender();var a=connectedScore(0),b=connectedScore(1);var o=[statesOf(0).length,statesOf(1).length],sp=G.spent;var w;if(a.count!==b.count)w=a.count>b.count?0:1;else if(o[0]!==o[1])w=o[0]>o[1]?0:1;else if(sp[0]!==sp[1])w=sp[0]>sp[1]?0:1;else w=-1;document.getElementById('overlay').style.display='flex';document.querySelector('#overlay .modal').innerHTML='<h2>'+(w<0?'Draw':(pname(w)+' wins'))+'</h2><p><b>'+pname(0)+'</b>: cluster '+a.count+' · '+o[0]+' states<br><b>'+pname(1)+'</b>: cluster '+b.count+' · '+o[1]+' states</p><button style="width:100%;margin-top:10px;" onclick="downloadReplay()">⬇ Download this game</button><button class="primary" style="margin-top:8px;width:100%;" onclick="location.reload()">New game</button>';}
 
