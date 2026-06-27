@@ -21,4 +21,4 @@ __pycache__/
 .claude/
 
 # redundant working copy (push the main folder, not this duplicate)
-git_upload/
+git_upload/.next/
