@@ -12,5 +12,13 @@ Thumbs.db
 .env
 node_modules/
 
+# Python AI Strategist (ai_server.py)
+venv/
+__pycache__/
+*.pyc
+
+# local tooling
+.claude/
+
 # redundant working copy (push the main folder, not this duplicate)
 git_upload/

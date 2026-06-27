@@ -102,6 +102,16 @@
         <input id="loadFile" type="file" accept="application/json,.json" style="display:none" onchange="loadFromFile(this)">
       </div>
     </div>
+    <!-- 🧠 AI Strategist (OpenAI gpt-5.4-nano via local ai_server.py) -->
+    <div class="card" id="aiStrategistCard">
+      <div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🧠 AI Strategist</b><span class="badge">gpt-5.4-nano</span></div>
+      <div class="hint" style="margin-bottom:8px;">Reads the board &amp; your budget, then coaches the player whose turn it is.</div>
+      <div class="btnrow">
+        <button id="aiHintBtn" class="primary" onclick="getAIHint('hint')">💡 Get AI hint</button>
+        <button id="aiTauntBtn" onclick="getAIHint('taunt')">😈 Taunt</button>
+      </div>
+      <div id="aiHintBox" class="hint" style="margin-top:10px;display:none;border-left:3px solid var(--acc);padding:8px 10px;background:var(--panel2);border-radius:8px;line-height:1.5;color:var(--ink);"></div>
+    </div>
     <div class="players" id="players"></div>
     <div class="card">
       <div class="row"><span class="phase" id="phaseLabel">—</span><span class="badge" id="turnBadge">Turn 1 / 20</span><!-- updated live --></div>
@@ -443,6 +453,54 @@ function loadFromFile(input){var file=input.files&&input.files[0];if(!file){retu
 /* ===================== AI OPPONENT (Player 2) ===================== */
 var P2MODE='human';                 // 'human' | 'random' | 'heuristic' | 'llm'
 var AI_ENDPOINT='http://localhost:8787/api/ai-move';
+var AI_HINT_ENDPOINT='/api/ai-hint';  // served by ai_server.py (Flask); key stays server-side
+
+/* ===== 🧠 AI STRATEGIST: ask gpt-5.4-nano for a hint or a taunt ===== */
+function aiBoardSnapshot(){
+  if(!G)return null;
+  var p=G.activeIdx, o=p?0:1;
+  var mine=connectedScore(p), theirs=connectedScore(o);
+  return {
+    turn:G.turn, maxTurns:(G.maxTurns||20),
+    activePlayer:p+1, activePlayerName:pname(p),
+    yourCoins:G.currency[p], oppCoins:G.currency[o],
+    yourCluster:mine.count, yourTotal:statesOf(p).length,
+    oppCluster:theirs.count, oppTotal:statesOf(o).length,
+    yourTile:G.token[p],
+    yourTiles:statesOf(p),
+    flop:(G.flop||[]).filter(function(s){return G.owner[s]===undefined;})
+                     .map(function(s){return {state:s,cost:COST[s]};}),
+    contract:(G.contract&&G.contract[p])?{state:G.contract[p],cost:COST[G.contract[p]]}:null
+  };
+}
+function getAIHint(mode){
+  mode=mode||'hint';
+  var box=document.getElementById('aiHintBox');
+  var hintBtn=document.getElementById('aiHintBtn');
+  var tauntBtn=document.getElementById('aiTauntBtn');
+  if(!G){if(box){box.style.display='block';box.textContent='Start a game first, then ask the Strategist.';}return;}
+  if(REPLAYMODE){if(box){box.style.display='block';box.textContent='The Strategist is off during replays.';}return;}
+  var snap=aiBoardSnapshot();
+  if(box){box.style.display='block';box.innerHTML='<span style="opacity:.7">🧠 '+(mode==='taunt'?'Loading a taunt…':'Thinking…')+'</span>';}
+  if(hintBtn)hintBtn.disabled=true; if(tauntBtn)tauntBtn.disabled=true;
+  fetch(AI_HINT_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mode:mode,board:snap})})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res&&res.hint){
+        var label=mode==='taunt'?'😈 ':'💡 ';
+        box.innerHTML=label+escapeHTML(res.hint);
+      }else{
+        box.textContent='⚠️ '+((res&&res.error)||'No response from the Strategist.');
+      }
+    })
+    .catch(function(){
+      box.textContent='⚠️ Could not reach the AI Strategist. Start it with: python ai_server.py  (then open http://localhost:5001)';
+    })
+    .finally(function(){ if(hintBtn)hintBtn.disabled=false; if(tauntBtn)tauntBtn.disabled=false; });
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 var AI_DELAY=420;                   // ms between animated bot actions
 function isBot(p){return p===1 && (P2MODE==='random'||P2MODE==='heuristic'||P2MODE==='llm');}
 function togglePanels(){

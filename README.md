@@ -59,6 +59,50 @@ The OpenAI key must **never** go in the game file or the repo, so a tiny local N
 
 The model is set in `server.js` (`MODEL = 'gpt-5.4-nano'`) — change that one line if your account uses a different model id. If the server is unreachable or errors, the OpenAI opponent automatically falls back to the heuristic AI so the game never stalls.
 
+## AI feature
+
+### 🧠 AI Strategist (OpenAI `gpt-5.4-nano`)
+
+A new in-game **AI Strategist** panel coaches whoever's turn it is. It reads a short
+snapshot of the live board — turn number, both players' coins, your largest connected
+cluster, the tile you're standing on, the open Flop tiles, and your secret contract —
+and asks `gpt-5.4-nano` for advice:
+
+- **💡 Get AI hint** — a 1–2 sentence strategic tip (e.g. *"Claim VESS ($4) — it's the
+  cheapest way to grow your IRVIK/GRAIL block without bleeding coins."*).
+- **😈 Taunt** — a short, playful in-character jab about the current position.
+
+The OpenAI key stays **server-side**: the browser calls a tiny local Python backend
+(`ai_server.py`, Flask) which holds the key (from `.env`) and talks to OpenAI. The key
+is never sent to the browser, and `.env` is git-ignored. This backend also *serves the
+game itself*, so it's all you need to run for the Strategist — it sits alongside Vihaan's
+original `server.js` (which still powers online play and the OpenAI opponent) and does
+not replace it.
+
+**Run it:**
+
+1. Create a virtual env and install deps:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate          # Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+2. Copy `.env.example` to **`.env`** and set:
+   ```
+   OPENAI_API_KEY=sk-...
+   OPENAI_MODEL=gpt-5.4-nano
+   ```
+3. Start the server and open the game:
+   ```bash
+   python ai_server.py
+   ```
+   Then visit **http://localhost:5001** and click **💡 Get AI hint** in the AI Strategist
+   panel during any game.
+
+The endpoint is `POST /api/ai-hint` with a JSON body `{ "mode": "hint"|"taunt", "board": {…} }`;
+it returns `{ "hint": "…" }`. If the key is missing it returns a clear `503`, and if the
+backend is unreachable the panel shows a friendly note instead of breaking the game.
+
 ## Watch a finished game (replay)
 
 Available in **`index.html`** (the single file runs local hot-seat, vs-AI, *and* online, so every mode is covered). When a game ends, click **⬇ Download this game** to save a `circuit-replay-*.json`. Later, from the start screen use **📂 Load game / watch replay**, pick that file, and step through it turn-by-turn with **◀ Prev / ▶ Play / Next ▶** (and **Exit replay**). The board is read-only during a replay. (In online games the host records and shares the replay with the guest, so both can download it.)
