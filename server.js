@@ -53,10 +53,12 @@ app.post('/api/ai-move', async (req, res) => {
     if (!Array.isArray(actions) || !actions.length) return res.status(400).json({ error: 'no actions' });
     const tools = actions.map(a => ({ type: 'function', function: { name: a.id, description: describe(a), parameters: { type: 'object', properties: {}, additionalProperties: false } } }));
     const usr = 'Current state:\n' + JSON.stringify(state, null, 1) + '\n\nChoose one action by calling its tool.';
+    console.log('[ai-move] -> OpenAI ' + MODEL + '  (turn ' + (state && state.turn) + ', ' + actions.length + ' options)');
     const r = await client.chat.completions.create({ model: MODEL, messages: [{ role: 'system', content: GAME_RULES }, { role: 'user', content: usr }], tools, tool_choice: 'required' });
     const call = r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.tool_calls && r.choices[0].message.tool_calls[0];
     let action = call ? call.function.name : actions[0].id;
     if (!actions.some(a => a.id === action)) action = actions[0].id;
+    console.log('[ai-move] <- OpenAI chose: ' + action + '  (tokens ' + (r.usage ? r.usage.total_tokens : '?') + ')');
     res.json({ action });
   } catch (e) { console.error('ai-move error:', e.message); res.status(500).json({ error: e.message }); }
 });
