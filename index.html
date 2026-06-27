@@ -55,7 +55,7 @@
   svg{display:block;width:auto;height:auto;max-width:100%;max-height:calc(100vh - 24px);border-radius:14px;}
   .cell{stroke-width:2;cursor:default;transition:fill .15s,stroke .12s;}
   .cell.clickable{cursor:pointer;}
-  .lbl{font-size:11px;fill:#eef4fc;text-anchor:middle;pointer-events:none;font-weight:700;letter-spacing:.4px;}
+  .lbl{font-size:11px;text-anchor:middle;pointer-events:none;font-weight:700;letter-spacing:.4px;}
   .cst{font-size:14px;text-anchor:middle;pointer-events:none;font-weight:700;}
   .cst.big{font-size:18px;font-weight:800;}
   #overlay{position:fixed;inset:0;background:rgba(6,9,14,.88);display:flex;align-items:center;justify-content:center;z-index:50;overflow-y:auto;padding:20px;box-sizing:border-box;}
@@ -246,7 +246,7 @@ for(let i=0;i<ALL.length;i++)for(let j=i+1;j<ALL.length;j++){const a=ALL[i],b=AL
   for(const e of EK[a])if(EK[b].has(e)){ADJ[a].add(b);ADJ[b].add(a);break;}}
 // monochrome lavender ramp: $2 lightest -> $8 darkest (tx = readable label colour)
 const TIER={8:{fill:'#45307e',stk:'#5e489f',tx:'#efeaff'},6:{fill:'#6b4fb8',stk:'#8367cf',tx:'#f0ebff'},5:{fill:'#8a6fcf',stk:'#a489df',tx:'#f3efff'},
-  4:{fill:'#a892dd',stk:'#bda9e8',tx:'#241a44'},3:{fill:'#bda9e8',stk:'#cdbef0',tx:'#241a44'},2:{fill:'#ece9f7',stk:'#f2eefb',tx:'#2a2150'}};
+  4:{fill:'#a892dd',stk:'#bda9e8',tx:'#241a44'},3:{fill:'#bda9e8',stk:'#cdbef0',tx:'#241a44'},2:{fill:'#ece9f7',stk:'#f2eefb',tx:'#000000'}};
 
 /* ===================== GAME STATE ===================== */
 let G=null;
@@ -795,6 +795,11 @@ function replayControls(ins,ctr){
   ctr.innerHTML='<div class="btnrow"><button onclick="replayPrev()">◀ Prev</button><button class="primary" onclick="replayPlay()">'+(playing?'⏸ Pause':'▶ Play')+'</button><button onclick="replayNext()">Next ▶</button></div><button onclick="replayExit()" style="width:100%;margin-top:6px;">Exit replay</button>';
 }
 
+if(new URLSearchParams(window.location.search).has('autostart')){
+  setTimeout(()=>{
+    startGame();
+  },200);
+}
 buildBoard();
 </script>
 </body>
