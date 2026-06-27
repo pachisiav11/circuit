@@ -452,7 +452,7 @@ function loadFromFile(input){var file=input.files&&input.files[0];if(!file){retu
 
 /* ===================== AI OPPONENT (Player 2) ===================== */
 var P2MODE='human';                 // 'human' | 'random' | 'heuristic' | 'llm'
-var AI_ENDPOINT='http://localhost:8787/api/ai-move';
+var AI_ENDPOINT='http://localhost:8791/api/ai-move';  // Node opponent (moved off 8787; a stale ClassMate PWA service worker squats that port)
 var AI_HINT_ENDPOINT='/api/ai-hint';  // served by ai_server.py (Flask); key stays server-side
 
 /* ===== 🧠 AI STRATEGIST: ask gpt-5.4-nano for a hint or a taunt ===== */
