@@ -46,6 +46,66 @@ const GAME_RULES = [
   'Choose the single best action by calling exactly ONE of the provided function tools.'
 ].join('\n');
 
+/* ---------------- AI Strategist hint / taunt ---------------- */
+const STRATEGIST_SYSTEM = [
+  'You are the CIRCUIT AI Strategist — a sharp, slightly cocky board-game coach.',
+  'CIRCUIT is a 2-player territory game on 25 states. The goal is to build the',
+  'LARGEST single CONNECTED cluster of states you own (only your biggest cluster',
+  'scores; ties break by total states, then coins spent). Central, pricier states',
+  '(GRAIL is the $8 hub) connect more and are strongest. Income is scarce: you only',
+  'gain coins by HOLDING (+5, capped at 20), so never overspend. Each turn you ROLL',
+  'a d3 to move and claim a Flop tile, HOLD for coins, or SEIZE an opponent tile for',
+  'double price to split their cluster. You also hold one secret contract tile.',
+  'Given a snapshot of the board, reply with ONE punchy hint (1-2 sentences, under 40',
+  'words) telling the active player their single best idea right now. If asked for a',
+  'taunt, give a short playful in-character jab instead. Be concrete: name states,',
+  'coins, or "hold" when it fits. No preamble, no lists — just the line.'
+].join(' ');
+
+function buildHintPrompt(board, mode) {
+  const lines = [];
+  lines.push(`Turn ${board.turn || '?'} of ${board.maxTurns || '?'}.`);
+  lines.push(`Active player: ${board.activePlayerName || 'You'} (P${board.activePlayer || '?'}).`);
+  lines.push(`Your coins: ${board.yourCoins ?? '?'}. Opponent coins: ${board.oppCoins ?? '?'}.`);
+  lines.push(`Your largest connected cluster: ${board.yourCluster || 0} states (you own ${board.yourTotal || 0} total).`);
+  lines.push(`Opponent's largest connected cluster: ${board.oppCluster || 0} states (they own ${board.oppTotal || 0} total).`);
+  lines.push(`You are standing on: ${board.yourTile || '?'}.`);
+  if (Array.isArray(board.flop) && board.flop.length) {
+    lines.push('Claimable Flop tiles right now: ' + board.flop.map(f => `${f.state} ($${f.cost})`).join(', ') + '.');
+  }
+  if (board.contract) {
+    lines.push(`Your secret contract target: ${board.contract.state} ($${board.contract.cost}).`);
+  }
+  if (Array.isArray(board.yourTiles) && board.yourTiles.length) {
+    lines.push('States you own: ' + board.yourTiles.join(', ') + '.');
+  }
+  lines.push(mode === 'taunt'
+    ? '\nGive a short, playful in-character taunt about this position.'
+    : '\nGive me my single best strategic move right now.');
+  return lines.join('\n');
+}
+
+app.post('/api/ai-hint', async (req, res) => {
+  try {
+    if (!client) return res.status(503).json({ error: 'OpenAI not configured (no OPENAI_API_KEY).' });
+    const { board = {}, mode = 'hint' } = req.body || {};
+    const userPrompt = buildHintPrompt(board, mode);
+    console.log(`[ai-hint] -> OpenAI ${MODEL}  (mode=${mode})`);
+    const r = await client.chat.completions.create({
+      model: MODEL,
+      messages: [
+        { role: 'system', content: STRATEGIST_SYSTEM },
+        { role: 'user', content: userPrompt }
+      ],
+      max_tokens: 120
+    });
+    const text = (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content || '').trim()
+      || 'Hold for coins and build out from your strongest cluster.';
+    console.log(`[ai-hint] <- "${text.slice(0, 80)}..."`);
+    res.json({ hint: text, mode });
+  } catch (e) { console.error('ai-hint error:', e.message); res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/ai-move', async (req, res) => {
   try {
     if (!client) return res.status(503).json({ error: 'OpenAI not configured (no OPENAI_API_KEY).' });
