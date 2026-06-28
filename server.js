@@ -97,7 +97,7 @@ app.post('/api/ai-hint', async (req, res) => {
         { role: 'system', content: STRATEGIST_SYSTEM },
         { role: 'user', content: userPrompt }
       ],
-      max_tokens: 120
+      max_completion_tokens: 120
     });
     const text = (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content || '').trim()
       || 'Hold for coins and build out from your strongest cluster.';
