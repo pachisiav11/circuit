@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- CIRCUIT tab favicon: two territories (blue cluster vs red) meeting at a contested gold node -->
+  <defs>
+    <clipPath id="round"><rect x="4" y="4" width="56" height="56" rx="13"/></clipPath>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="13" fill="#0c1018"/>
+  <g clip-path="url(#round)" stroke="#0c1018" stroke-width="2.6" stroke-linejoin="round">
+    <!-- left-top + left-bottom = connected BLUE cluster -->
+    <polygon points="4,4 36,4 31,33 4,29" fill="#5aa0ff"/>
+    <polygon points="31,33 28,60 4,60 4,29" fill="#5aa0ff"/>
+    <!-- top-right = lavender (neutral tile) -->
+    <polygon points="36,4 60,4 60,30 31,33" fill="#c3b6ea"/>
+    <!-- bottom-right = RED territory -->
+    <polygon points="60,30 60,60 28,60 31,33" fill="#ff6b6b"/>
+  </g>
+  <!-- contested centre node -->
+  <circle cx="31" cy="33" r="5.5" fill="#0c1018"/>
+  <circle cx="31" cy="33" r="3.6" fill="#f5b942"/>
+</svg>

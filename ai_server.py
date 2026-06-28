@@ -3,7 +3,7 @@
 # A tiny local backend that:
 #   1. serves the existing game (index.html + assets), and
 #   2. exposes ONE new endpoint, POST /api/ai-hint, which sends a short
-#      text description of the current board + budget to OpenAI gpt-5.4-nano
+#      text description of the current board + budget to OpenAI gpt-5.4-mini
 #      and returns a 1-2 sentence strategic hint OR an in-character taunt.
 #
 # The OpenAI key stays SERVER-SIDE (read from .env) — it is never sent to the
@@ -12,7 +12,7 @@
 #
 #   python -m venv venv && source venv/bin/activate     (Windows: venv\Scripts\activate)
 #   pip install -r requirements.txt
-#   # put your key in .env  (OPENAI_API_KEY=sk-...   OPENAI_MODEL=gpt-5.4-nano)
+#   # put your key in .env  (OPENAI_API_KEY=sk-...   OPENAI_MODEL=gpt-5.4-mini)
 #   python ai_server.py
 #   # open http://localhost:5001  and click "🧠 AI Strategist" in the game
 
@@ -25,7 +25,7 @@ load_dotenv()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PORT = int(os.environ.get("AI_PORT", "5001"))
-MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.4-nano")
+MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.4-mini")
 API_KEY = os.environ.get("OPENAI_API_KEY")
 
 client = OpenAI(api_key=API_KEY, timeout=30) if API_KEY else None

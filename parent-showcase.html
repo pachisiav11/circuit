@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CIRCUIT | Final Project Showcase</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111111;
+      --panel: #191919;
+      --panel-2: #242424;
+      --ink: #f5f1e8;
+      --muted: #b8b0a2;
+      --line: rgba(245, 241, 232, 0.16);
+      --red: #df5b56;
+      --green: #69bd7b;
+      --blue: #69a9d8;
+      --gold: #d5a84f;
+      --violet: #9b83d7;
+      --shadow: 0 18px 55px rgba(0, 0, 0, 0.38);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        var(--bg);
+      background-size: 52px 52px;
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: rgba(17, 17, 17, 0.84);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar-inner {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand img {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .brand strong {
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    nav a,
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 0 13px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.035);
+      font-size: 13px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    nav a:hover,
+    .button:hover {
+      color: var(--ink);
+      border-color: rgba(245, 241, 232, 0.34);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .button.primary {
+      color: #15100b;
+      border-color: transparent;
+      background: var(--gold);
+    }
+
+    .hero {
+      min-height: calc(100vh - 64px);
+      display: grid;
+      align-items: center;
+      padding: 44px 0 28px;
+    }
+
+    .hero-inner,
+    .section-inner {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(360px, 1.2fr);
+      gap: 34px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 13px;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(54px, 10vw, 138px);
+      line-height: 0.9;
+      font-weight: 900;
+    }
+
+    .subtitle {
+      max-width: 620px;
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 25px);
+      line-height: 1.35;
+    }
+
+    .hero-actions {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 11px;
+    }
+
+    .hero-visual {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-visual img {
+      width: 100%;
+      aspect-ratio: 1000 / 720;
+      object-fit: cover;
+    }
+
+    .caption-strip {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(12, 12, 12, 0.86);
+      backdrop-filter: blur(10px);
+    }
+
+    .caption-strip div {
+      padding: 12px 14px;
+      border-right: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .caption-strip div:last-child {
+      border-right: 0;
+    }
+
+    .caption-strip b {
+      display: block;
+      font-size: 20px;
+    }
+
+    .caption-strip span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    section {
+      padding: 72px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.6fr) minmax(280px, 0.4fr);
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 64px);
+      line-height: 0.95;
+    }
+
+    .section-head p,
+    .wide-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.58;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.four {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .tile,
+    .step,
+    .feature,
+    .credit {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(25, 25, 25, 0.88);
+      padding: 18px;
+    }
+
+    .tile strong,
+    .step strong,
+    .feature strong,
+    .credit strong {
+      display: block;
+      margin-bottom: 9px;
+      font-size: 18px;
+    }
+
+    .tile p,
+    .step p,
+    .feature p,
+    .credit p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .tile .number {
+      display: inline-grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      color: #111111;
+      font-weight: 900;
+      background: var(--gold);
+    }
+
+    .rules-layout {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.38fr) minmax(0, 0.62fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .mini-board {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .state {
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 7px;
+      color: #111111;
+      font-weight: 900;
+      font-size: clamp(12px, 2vw, 17px);
+      box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.13);
+    }
+
+    .state.red { background: var(--red); }
+    .state.green { background: var(--green); }
+    .state.blue { background: var(--blue); }
+    .state.gold { background: var(--gold); }
+    .state.violet { background: var(--violet); }
+    .state.dark {
+      background: #303030;
+      color: var(--muted);
+    }
+
+    .callout {
+      margin-top: 18px;
+      border-left: 4px solid var(--green);
+      padding: 16px 18px;
+      background: rgba(105, 189, 123, 0.09);
+      color: var(--ink);
+      line-height: 1.55;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .feature {
+      min-height: 178px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 4px;
+      background: var(--accent, var(--gold));
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 20px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .tab-button {
+      min-height: 40px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 0 14px;
+      color: var(--muted);
+      background: transparent;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .tab-button:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .tab-button[aria-selected="true"] {
+      color: #15100b;
+      background: var(--gold);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .learning-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.68fr) minmax(280px, 0.32fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .evidence-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .source-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(25, 25, 25, 0.88);
+      padding: 18px;
+    }
+
+    .source-box strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 17px;
+    }
+
+    .source-box a {
+      display: block;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      text-decoration: underline;
+      text-decoration-color: rgba(245, 241, 232, 0.25);
+      text-underline-offset: 3px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .step time {
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .demo-band {
+      background:
+        linear-gradient(135deg, rgba(213, 168, 79, 0.13), transparent 36%),
+        linear-gradient(45deg, rgba(105, 169, 216, 0.12), transparent 42%),
+        #151515;
+    }
+
+    .demo-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      background: rgba(17, 17, 17, 0.76);
+    }
+
+    .demo-panel h2 {
+      font-size: clamp(31px, 4vw, 58px);
+    }
+
+    .demo-panel p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 760px;
+    }
+
+    footer {
+      padding: 26px 0 42px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+    }
+
+    footer .section-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .section-head,
+      .rules-layout,
+      .learning-layout,
+      .demo-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .grid.four,
+      .grid.three {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      nav {
+        display: none;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .topbar-inner,
+      .hero-inner,
+      .section-inner {
+        width: min(100% - 22px, 1180px);
+      }
+
+      .grid.four,
+      .grid.three,
+      .caption-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .caption-strip {
+        position: static;
+      }
+
+      .step {
+        grid-template-columns: 1fr;
+        gap: 5px;
+      }
+
+      .hero-actions {
+        display: grid;
+      }
+
+      .button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="CIRCUIT showcase home">
+        <img src="logo.png" alt="CIRCUIT logo">
+        <span>
+          <strong>CIRCUIT</strong>
+          <span>Final project showcase</span>
+        </span>
+      </a>
+      <nav aria-label="Page navigation">
+        <a href="#what">What it is</a>
+        <a href="#rules">How it plays</a>
+        <a href="#built">What I built</a>
+        <a href="#course">Course learning</a>
+        <a href="https://circuit-netb.onrender.com">Demo</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-inner hero-grid">
+        <div>
+          <p class="eyebrow">2-player strategy game | HTML, CSS, JavaScript, Node.js</p>
+          <h1 id="hero-title">CIRCUIT</h1>
+          <p class="subtitle">A tactical board game about movement, money, and building the strongest connected network of states before the final turn.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="https://circuit-netb.onrender.com">Open playable game</a>
+            <a class="button" href="#rules">Explain the rules</a>
+            <a class="button" href="#course">What I learned</a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Screenshot of CIRCUIT gameplay">
+          <img src="assets/screenshot.png" alt="CIRCUIT board game screenshot with colored states and player panels">
+          <div class="caption-strip" aria-label="Project stats">
+            <div><b>25</b><span>state map</span></div>
+            <div><b>20</b><span>default turns</span></div>
+            <div><b>4</b><span>play modes</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="what" aria-labelledby="what-title">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 id="what-title">What Is CIRCUIT?</h2>
+          <p>CIRCUIT is a browser game where two players compete on one shared map. The goal is not just to own many states, but to connect them into the largest single cluster.</p>
+        </div>
+        <div class="grid four">
+          <article class="tile">
+            <span class="number">1</span>
+            <strong>Control territory</strong>
+            <p>Players move across neighboring states and buy only the public targets currently available.</p>
+          </article>
+          <article class="tile">
+            <span class="number">2</span>
+            <strong>Manage a budget</strong>
+            <p>Everyone starts with 15 coins. Holding earns money, but coins cap at 20, so timing matters.</p>
+          </article>
+          <article class="tile">
+            <span class="number">3</span>
+            <strong>Build connections</strong>
+            <p>Scoring rewards the largest connected cluster, which makes bridges and blockades powerful.</p>
+          </article>
+          <article class="tile">
+            <span class="number">4</span>
+            <strong>Adapt to surprises</strong>
+            <p>Secret contracts and stealing add hidden goals, risk, and late-game comebacks.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="rules" aria-labelledby="rules-title">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 id="rules-title">How It Plays</h2>
+          <p>Each turn is simple, but the choices create strategy: move now, save coins, claim a target, or attack a key connection.</p>
+        </div>
+        <div class="rules-layout">
+          <div>
+            <div class="mini-board" aria-label="Simplified CIRCUIT board diagram">
+              <span class="state red">P1</span>
+              <span class="state dark">$3</span>
+              <span class="state green">$5</span>
+              <span class="state dark">$2</span>
+              <span class="state blue">P2</span>
+              <span class="state red">$4</span>
+              <span class="state red">$2</span>
+              <span class="state green">$6</span>
+              <span class="state dark">$3</span>
+              <span class="state blue">$4</span>
+              <span class="state dark">$5</span>
+              <span class="state violet">?</span>
+              <span class="state gold">F</span>
+              <span class="state green">$8</span>
+              <span class="state dark">$2</span>
+              <span class="state dark">$3</span>
+              <span class="state red">$6</span>
+              <span class="state dark">$4</span>
+              <span class="state blue">$3</span>
+              <span class="state blue">$2</span>
+              <span class="state green">$4</span>
+              <span class="state dark">$5</span>
+              <span class="state gold">F</span>
+              <span class="state dark">$6</span>
+              <span class="state gold">F</span>
+            </div>
+            <div class="callout">
+              Public Flop targets are marked with F. A secret contract is private, shown here as ? only for explanation.
+            </div>
+          </div>
+          <div class="timeline">
+            <article class="step">
+              <time>Turn choice</time>
+              <div>
+                <strong>Roll or Hold</strong>
+                <p>Roll a d3 to move 1 to 3 steps, or Hold to gain 5 coins and end the turn.</p>
+              </div>
+            </article>
+            <article class="step">
+              <time>Movement</time>
+              <div>
+                <strong>Move across borders</strong>
+                <p>Own and empty states are free to cross. Opponent states cost 1 coin per step.</p>
+              </div>
+            </article>
+            <article class="step">
+              <time>Claim</time>
+              <div>
+                <strong>Buy a public or secret target</strong>
+                <p>Only 3 public Flop states are claimable at once. Secret contracts are private targets that reward memory and planning.</p>
+              </div>
+            </article>
+            <article class="step">
+              <time>Attack</time>
+              <div>
+                <strong>Steal a key state</strong>
+                <p>Pay double a state price to seize it from the opponent and possibly split their connected cluster.</p>
+              </div>
+            </article>
+            <article class="step">
+              <time>Win</time>
+              <div>
+                <strong>Score the biggest cluster</strong>
+                <p>After the final turn, the largest connected group wins. Ties use total states owned, then coins spent buying states.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="built" aria-labelledby="built-title">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 id="built-title">What I Built</h2>
+          <p>The project grew from a local two-player game into a fuller product with AI, online multiplayer, saving, replays, and rule verification.</p>
+        </div>
+        <div class="grid three">
+          <article class="feature" style="--accent: var(--green)">
+            <strong>Complete browser game</strong>
+            <p>The main game runs from one HTML file, with the board, rules, turn flow, scoring, and UI all included.</p>
+          </article>
+          <article class="feature" style="--accent: var(--blue)">
+            <strong>AI opponents</strong>
+            <p>Player 2 can be human, random, heuristic AI, or an optional OpenAI-powered bot through a local server.</p>
+          </article>
+          <article class="feature" style="--accent: var(--gold)">
+            <strong>Online multiplayer</strong>
+            <p>A Node.js and Socket.IO server lets two people play by creating and joining a short room code.</p>
+          </article>
+          <article class="feature" style="--accent: var(--red)">
+            <strong>Save files</strong>
+            <p>Games can be saved and loaded as JSON, keeping progress controlled by the player instead of hidden browser storage.</p>
+          </article>
+          <article class="feature" style="--accent: var(--violet)">
+            <strong>Replay viewer</strong>
+            <p>Finished games can be downloaded and watched turn by turn, which helps explain decisions after a match.</p>
+          </article>
+          <article class="feature" style="--accent: var(--green)">
+            <strong>Tested rules</strong>
+            <p>Simulated games checked rule invariants like currency limits, legal movement, Flop refills, and AI legality.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="course" aria-labelledby="learning-title">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2 id="learning-title">What I Learned In The Course</h2>
+          <p>This section is based on the notes and projects in <code>D:\Vihaan\GSP 2026</code>: prompt banks, catch-up logs, Git notes, benchmark research, Supabase work, and the calendar-agent project.</p>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Course learning tabs">
+          <button class="tab-button" id="tab-prompting" role="tab" type="button" aria-selected="true" aria-controls="panel-prompting" data-tab="prompting">Prompting</button>
+          <button class="tab-button" id="tab-github" role="tab" type="button" aria-selected="false" aria-controls="panel-github" data-tab="github">GitHub</button>
+          <button class="tab-button" id="tab-agents" role="tab" type="button" aria-selected="false" aria-controls="panel-agents" data-tab="agents">Agents</button>
+          <button class="tab-button" id="tab-benchmarks" role="tab" type="button" aria-selected="false" aria-controls="panel-benchmarks" data-tab="benchmarks">Benchmarks</button>
+          <button class="tab-button" id="tab-tools" role="tab" type="button" aria-selected="false" aria-controls="panel-tools" data-tab="tools">Tools</button>
+          <button class="tab-button" id="tab-circuit" role="tab" type="button" aria-selected="false" aria-controls="panel-circuit" data-tab="circuit">CIRCUIT</button>
+        </div>
+
+        <div class="tab-panel active" id="panel-prompting" role="tabpanel" aria-labelledby="tab-prompting">
+          <div class="learning-layout">
+            <div class="grid three">
+              <article class="credit">
+                <strong>Prompt specificity</strong>
+                <p>I practiced turning broad requests into precise instructions with audience, format, features, constraints, and testing steps.</p>
+              </article>
+              <article class="credit">
+                <strong>Context windows</strong>
+                <p>I learned that models have limited context, so apps must decide what to keep, summarize, save, or forget.</p>
+              </article>
+              <article class="credit">
+                <strong>Structured prompts</strong>
+                <p>I used prompts for AlphaGo explanations, HTML simulations, local ChatGPT apps, JSON/tool-call explanations, and reasoning-level comparisons.</p>
+              </article>
+            </div>
+            <aside class="source-box">
+              <strong>Evidence in folder</strong>
+              <a href="../Catch-up/prompt-bank.md">Catch-up/prompt-bank.md</a>
+              <a href="../day2-day3-catchup/prompt-bank.md">day2-day3-catchup/prompt-bank.md</a>
+              <a href="../day2-day3-catchup/LOG.md">day2-day3-catchup/LOG.md</a>
+            </aside>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="panel-github" role="tabpanel" aria-labelledby="tab-github">
+          <div class="learning-layout">
+            <div class="grid three">
+              <article class="credit">
+                <strong>Git vs GitHub</strong>
+                <p>I learned that Git is local version control, while GitHub is the hosted remote copy used to share and collaborate.</p>
+              </article>
+              <article class="credit">
+                <strong>Checkpoints</strong>
+                <p>I learned the workflow of working directory, staging area, commits, branches, remotes, push, pull, clone, and log.</p>
+              </article>
+              <article class="credit">
+                <strong>Secret safety</strong>
+                <p>The notes repeatedly say not to commit API keys, <code>.env</code> files, passwords, or private data.</p>
+              </article>
+            </div>
+            <aside class="source-box">
+              <strong>Evidence in folder</strong>
+              <a href="../day2-day3-catchup/terminal-git-cheatsheet.md">day2-day3-catchup/terminal-git-cheatsheet.md</a>
+              <a href="../day2-day3-catchup/LOG.md">day2-day3-catchup/LOG.md</a>
+              <a href="README.md">CIRCUIT/README.md</a>
+            </aside>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="panel-agents" role="tabpanel" aria-labelledby="tab-agents">
+          <div class="learning-layout">
+            <div class="grid three">
+              <article class="credit">
+                <strong>Agents have tools</strong>
+                <p>I learned the difference between a chat answer and an agent that can read folders, edit files, run commands, start servers, and explain changes.</p>
+              </article>
+              <article class="credit">
+                <strong>Harness and permissions</strong>
+                <p>The course materials describe the chain: model writes JSON, harness calls a function, terminal or API runs, and results come back.</p>
+              </article>
+              <article class="credit">
+                <strong>Parallel work</strong>
+                <p>The transcript and projects show using separate folders, forks, handoffs, and agents working on different parts without breaking the live version.</p>
+              </article>
+            </div>
+            <aside class="source-box">
+              <strong>Evidence in folder</strong>
+              <a href="../Catch-up/1_Start.html">Catch-up/1_Start.html</a>
+              <a href="../day2-day3-catchup/prompt-bank.md">day2-day3-catchup/prompt-bank.md</a>
+              <a href="../project/README.md">project/README.md</a>
+            </aside>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="panel-benchmarks" role="tabpanel" aria-labelledby="tab-benchmarks">
+          <div class="learning-layout">
+            <div class="grid three">
+              <article class="credit">
+                <strong>Model comparison</strong>
+                <p>I studied a benchmark compilation of 33 AI models with rankings, providers, model types, and capability tiers.</p>
+              </article>
+              <article class="credit">
+                <strong>Modern metrics</strong>
+                <p>The benchmark notes cover MMLU-Pro, GPQA-Diamond, SWE-bench Verified, SimpleQA, FrontierMath, AIME, IFEval, and other evaluations.</p>
+              </article>
+              <article class="credit">
+                <strong>Limits of benchmarks</strong>
+                <p>I learned that older tests can saturate, so frontier models need harder measures like real software tasks, reasoning, cost, latency, and tool use.</p>
+              </article>
+            </div>
+            <aside class="source-box">
+              <strong>Evidence in folder</strong>
+              <a href="../day5/benchmarks/README.md">day5/benchmarks/README.md</a>
+              <a href="../day5/benchmarks/METHODOLOGY.md">day5/benchmarks/METHODOLOGY.md</a>
+              <a href="../day5/benchmarks/MODELS_RANKINGS.md">day5/benchmarks/MODELS_RANKINGS.md</a>
+            </aside>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="panel-tools" role="tabpanel" aria-labelledby="tab-tools">
+          <div class="learning-layout">
+            <div class="grid three">
+              <article class="credit">
+                <strong>APIs and keys</strong>
+                <p>I built or studied local AI apps that use API keys from environment variables instead of hardcoding secrets.</p>
+              </article>
+              <article class="credit">
+                <strong>Supabase</strong>
+                <p>The course folder includes a class resource-sharing app using Supabase for files, prompts, links, comments, authentication, and database-backed storage.</p>
+              </article>
+              <article class="credit">
+                <strong>Desktop agents</strong>
+                <p>The calendar-agent project uses Python, Google Calendar API, SQLite, Claude reasoning, pywebview, tray presence, and Windows notifications.</p>
+              </article>
+            </div>
+            <aside class="source-box">
+              <strong>Evidence in folder</strong>
+              <a href="../day1-catchup/mini-chatgpt-local/README.md">day1-catchup/mini-chatgpt-local/README.md</a>
+              <a href="../supabase/supabase-student-env-handoff.md">supabase/supabase-student-env-handoff.md</a>
+              <a href="../project/Calendar-Agent-Project-Spec.md">project/Calendar-Agent-Project-Spec.md</a>
+            </aside>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="panel-circuit" role="tabpanel" aria-labelledby="tab-circuit">
+          <div class="learning-layout">
+            <div class="grid three">
+              <article class="credit">
+                <strong>Game design</strong>
+                <p>I balanced movement, money, stealing, secret contracts, public targets, and connected-cluster scoring.</p>
+              </article>
+              <article class="credit">
+                <strong>Product features</strong>
+                <p>CIRCUIT includes hot-seat play, AI opponents, online multiplayer, JSON saves, replay downloads, and a rules panel.</p>
+              </article>
+              <article class="credit">
+                <strong>Testing mindset</strong>
+                <p>The changelog records simulations and invariant checks for game rules, AI turns, replay behavior, and online relay logic.</p>
+              </article>
+            </div>
+            <aside class="source-box">
+              <strong>Evidence in folder</strong>
+              <a href="DESIGN.md">CIRCUIT/DESIGN.md</a>
+              <a href="CHANGELOG.md">CIRCUIT/CHANGELOG.md</a>
+              <a href="README.md">CIRCUIT/README.md</a>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo" class="demo-band" aria-labelledby="demo-title">
+      <div class="section-inner">
+        <div class="demo-panel">
+          <div>
+            <h2 id="demo-title">Ready For The Demo</h2>
+            <p>Open the playable game, choose player names, set the number of turns, and play hot-seat on the same screen. For a short final-day demo, a 6 to 10 turn match shows the core decisions quickly.</p>
+          </div>
+          <a class="button primary" href="https://circuit-netb.onrender.com">Launch CIRCUIT</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="section-inner">
+      <span>CIRCUIT final project showcase</span>
+      <span>Built with HTML, CSS, JavaScript, Node.js, Socket.IO, and OpenAI integration</span>
+    </div>
+  </footer>
+  <script>
+    const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+    const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+
+    function showTab(tabName) {
+      for (const button of tabButtons) {
+        const selected = button.dataset.tab === tabName;
+        button.setAttribute("aria-selected", selected ? "true" : "false");
+      }
+
+      for (const panel of tabPanels) {
+        panel.classList.toggle("active", panel.id === `panel-${tabName}`);
+      }
+    }
+
+    for (const button of tabButtons) {
+      button.addEventListener("click", () => showTab(button.dataset.tab));
+    }
+  </script>
+</body>
+</html>
