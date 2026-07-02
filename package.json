@@ -2,16 +2,16 @@
   "name": "circuit-server",
   "version": "1.1.0",
   "private": true,
-  "description": "Serves CIRCUIT, relays online multiplayer (Socket.IO), and optionally runs the OpenAI opponent.",
+  "description": "Serves CIRCUIT, relays online multiplayer (Socket.IO), and optionally runs the Claude opponent.",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.109.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "openai": "^4.56.0",
     "socket.io": "^4.8.3"
   }
 }

@@ -1,17 +1,17 @@
 // CIRCUIT server: serves the game, relays online multiplayer (Socket.IO), and
-// optionally answers the OpenAI opponent. Runs locally and on Render.
+// optionally answers the Claude opponent. Runs locally and on Render.
 //
 //   npm install   then   node server.js   (or: npm start)
-//   Online multiplayer needs NO key. The OpenAI opponent needs OPENAI_API_KEY in .env.
+//   Online multiplayer needs NO key. The Claude opponent needs ANTHROPIC_API_KEY in .env.
 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
-let OpenAI = null; try { OpenAI = require('openai'); } catch (e) { /* openai optional */ }
+let Anthropic = null; try { Anthropic = require('@anthropic-ai/sdk'); } catch (e) { /* anthropic optional */ }
 
-const MODEL = 'gpt-5.4-nano';                 // <-- change if your account uses a different model id
+const MODEL = 'claude-opus-4-8';              // <-- change if your account uses a different model id
 const PORT = process.env.PORT || 8787;
 
 const app = express();
@@ -19,9 +19,9 @@ app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(__dirname));           // serve index.html (game UI) + assets
 
-/* ---------------- OpenAI opponent (optional) ---------------- */
+/* ---------------- Claude opponent (optional) ---------------- */
 let client = null;
-if (process.env.OPENAI_API_KEY && OpenAI) client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+if (process.env.ANTHROPIC_API_KEY && Anthropic) client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function describe(a) {
   switch (a.type) {
@@ -87,19 +87,19 @@ function buildHintPrompt(board, mode) {
 
 app.post('/api/ai-hint', async (req, res) => {
   try {
-    if (!client) return res.status(503).json({ error: 'OpenAI not configured (no OPENAI_API_KEY).' });
+    if (!client) return res.status(503).json({ error: 'Claude not configured (no ANTHROPIC_API_KEY).' });
     const { board = {}, mode = 'hint' } = req.body || {};
     const userPrompt = buildHintPrompt(board, mode);
-    console.log(`[ai-hint] -> OpenAI ${MODEL}  (mode=${mode})`);
-    const r = await client.chat.completions.create({
+    console.log(`[ai-hint] -> Claude ${MODEL}  (mode=${mode})`);
+    const r = await client.messages.create({
       model: MODEL,
+      max_tokens: 200,
+      system: STRATEGIST_SYSTEM,
       messages: [
-        { role: 'system', content: STRATEGIST_SYSTEM },
         { role: 'user', content: userPrompt }
-      ],
-      max_completion_tokens: 120
+      ]
     });
-    const text = (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content || '').trim()
+    const text = (r.content.filter(b => b.type === 'text').map(b => b.text).join('')).trim()
       || 'Hold for coins and build out from your strongest cluster.';
     console.log(`[ai-hint] <- "${text.slice(0, 80)}..."`);
     res.json({ hint: text, mode });
@@ -108,17 +108,17 @@ app.post('/api/ai-hint', async (req, res) => {
 
 app.post('/api/ai-move', async (req, res) => {
   try {
-    if (!client) return res.status(503).json({ error: 'OpenAI not configured (no OPENAI_API_KEY).' });
+    if (!client) return res.status(503).json({ error: 'Claude not configured (no ANTHROPIC_API_KEY).' });
     const { state, actions } = req.body || {};
     if (!Array.isArray(actions) || !actions.length) return res.status(400).json({ error: 'no actions' });
-    const tools = actions.map(a => ({ type: 'function', function: { name: a.id, description: describe(a), parameters: { type: 'object', properties: {}, additionalProperties: false } } }));
+    const tools = actions.map(a => ({ name: a.id, description: describe(a), input_schema: { type: 'object', properties: {}, additionalProperties: false } }));
     const usr = 'Current state:\n' + JSON.stringify(state, null, 1) + '\n\nChoose one action by calling its tool.';
-    console.log('[ai-move] -> OpenAI ' + MODEL + '  (turn ' + (state && state.turn) + ', ' + actions.length + ' options)');
-    const r = await client.chat.completions.create({ model: MODEL, messages: [{ role: 'system', content: GAME_RULES }, { role: 'user', content: usr }], tools, tool_choice: 'required' });
-    const call = r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.tool_calls && r.choices[0].message.tool_calls[0];
-    let action = call ? call.function.name : actions[0].id;
+    console.log('[ai-move] -> Claude ' + MODEL + '  (turn ' + (state && state.turn) + ', ' + actions.length + ' options)');
+    const r = await client.messages.create({ model: MODEL, max_tokens: 300, system: GAME_RULES, messages: [{ role: 'user', content: usr }], tools, tool_choice: { type: 'any' } });
+    const call = r.content.find(b => b.type === 'tool_use');
+    let action = call ? call.name : actions[0].id;
     if (!actions.some(a => a.id === action)) action = actions[0].id;
-    console.log('[ai-move] <- OpenAI chose: ' + action + '  (tokens ' + (r.usage ? r.usage.total_tokens : '?') + ')');
+    console.log('[ai-move] <- Claude chose: ' + action + '  (tokens ' + (r.usage ? (r.usage.input_tokens + r.usage.output_tokens) : '?') + ')');
     res.json({ action });
   } catch (e) { console.error('ai-move error:', e.message); res.status(500).json({ error: e.message }); }
 });
@@ -177,4 +177,4 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => console.log('CIRCUIT server on http://localhost:' + PORT + '   (online multiplayer + ' + (client ? 'OpenAI ready' : 'OpenAI off') + ')'));
+server.listen(PORT, () => console.log('CIRCUIT server on http://localhost:' + PORT + '   (online multiplayer + ' + (client ? 'Claude ready' : 'Claude off') + ')'));

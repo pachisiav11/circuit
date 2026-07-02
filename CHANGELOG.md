@@ -22,9 +22,9 @@ All notable design and gameplay changes, newest first. (Versions track the desig
 - Verified: relay protocol (create / join / full-room / state+action relay / disconnect cleanup) passes 12/12 checks; the game still passes the full local-play harness (4,000 games).
 
 ## v1.0 — AI opponent (Player 2)
-- Player 2 can be **Human**, **Random bot** (uniform legal move), **Heuristic AI** (rule-based strategy), or **OpenAI AI** (model `gpt-5.4-nano` via function-calling — each legal move is a tool).
+- Player 2 can be **Human**, **Random bot** (uniform legal move), **Heuristic AI** (rule-based strategy), or **Claude AI** (model `claude-opus-4-8` via function-calling — each legal move is a tool).
 - AI turns are **animated**. Player 1 stays human.
-- OpenAI bot runs through a small local Node server (`server.js`) that reads the key from a git-ignored **`.env`** — the key never touches the browser or the repo. Falls back to the heuristic if the server is unavailable.
+- Anthropic bot runs through a small local Node server (`server.js`) that reads the key from a git-ignored **`.env`** — the key never touches the browser or the repo. Falls back to the heuristic if the server is unavailable.
 - Verified: 5,000 AI-driven games, ~7.3M invariant/legality assertions, no failures; heuristic beats random ~99%.
 
 ## v0.9.7 — Out-of-reach pricing cue

@@ -156,9 +156,9 @@
         <input id="loadFile" type="file" accept="application/json,.json" style="display:none" onchange="loadFromFile(this)">
       </div>
     </div>
-    <!-- 🧠 AI Strategist (OpenAI gpt-5.4-nano via local ai_server.py) -->
+    <!-- 🧠 AI Strategist (Anthropic claude-opus-4-8 via local ai_server.py) -->
     <div class="card" id="aiStrategistCard">
-      <div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🧠 AI Strategist</b><span class="badge">gpt-5.4-nano</span></div>
+      <div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🧠 AI Strategist</b><span class="badge">claude-opus-4-8</span></div>
       <div class="hint" style="margin-bottom:8px;">Reads the board &amp; your budget, then coaches the player whose turn it is.</div>
       <div class="btnrow">
         <button id="aiHintBtn" class="primary" onclick="getAIHint('hint')">💡 Get AI hint</button>
@@ -226,7 +226,7 @@
       <label for="turnsInput" style="font-size:12px;color:var(--dim);font-weight:600;">Number of turns <span style="color:var(--gold)">(online: host's value is used)</span></label>
       <input id="turnsInput" type="number" min="1" max="99" step="1" value="20" style="width:70px;font-family:inherit;font-size:14px;padding:6px 8px;border-radius:6px;background:var(--panel);color:var(--ink);border:1px solid var(--line);text-align:center;">
     </div>
-    <div style="margin-top:14px;font-size:13px;color:var(--ink);">Player 2: <select id="p2mode" onchange="P2MODE=this.value;togglePanels()" style="font-family:inherit;font-size:13px;padding:4px 8px;border-radius:6px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);"><option value="human">Human (hot-seat)</option><option value="random">Random bot</option><option value="heuristic">Heuristic AI</option><option value="llm">OpenAI AI (needs local server)</option><option value="online">🌐 Online opponent (by code)</option></select></div>
+    <div style="margin-top:14px;font-size:13px;color:var(--ink);">Player 2: <select id="p2mode" onchange="P2MODE=this.value;togglePanels()" style="font-family:inherit;font-size:13px;padding:4px 8px;border-radius:6px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);"><option value="human">Human (hot-seat)</option><option value="random">Random bot</option><option value="heuristic">Heuristic AI</option><option value="llm">Claude AI (needs local server)</option><option value="online">🌐 Online opponent (by code)</option></select></div>
     <button id="localStartBtn" class="primary" style="margin-top:12px;width:100%;" onclick="startGame()">Start Game</button>
     <button style="margin-top:8px;width:100%;" onclick="document.getElementById('loadFile').click()">📂 Load game / watch replay</button>
     <div id="onlinePanel" style="display:none;margin-top:16px;border-top:1px solid var(--line);padding-top:14px;text-align:left;">
@@ -509,7 +509,7 @@ var P2MODE='human';                 // 'human' | 'random' | 'heuristic' | 'llm'
 var AI_ENDPOINT='http://localhost:8791/api/ai-move';  // Node opponent (moved off 8787; a stale ClassMate PWA service worker squats that port)
 var AI_HINT_ENDPOINT='/api/ai-hint';  // served by ai_server.py (Flask); key stays server-side
 
-/* ===== 🧠 AI STRATEGIST: ask gpt-5.4-nano for a hint or a taunt ===== */
+/* ===== 🧠 AI STRATEGIST: ask claude-opus-4-8 for a hint or a taunt ===== */
 function aiBoardSnapshot(){
   if(!G)return null;
   var p=G.activeIdx, o=p?0:1;
@@ -653,7 +653,7 @@ function chooseAction(p,acts,cb){
 }
 function startBotTurn(){
   var ov=document.getElementById('overlay');ov.style.display='flex';
-  var name=(P2MODE==='random'?'random':(P2MODE==='llm'?'OpenAI':'heuristic'));
+  var name=(P2MODE==='random'?'random':(P2MODE==='llm'?'Anthropic':'heuristic'));
   document.querySelector('#overlay .modal').innerHTML='<h2>'+pname(1)+' · AI</h2><p>The '+name+' opponent is taking its turn…</p>';
   setTimeout(function(){ov.style.display='none';startTurn();setTimeout(botTurnStep,AI_DELAY);},700);
 }
@@ -676,7 +676,7 @@ function log(s){G.log.unshift(s);if(G.log.length>40)G.log.pop();}
 function startGame(){G=newState();
   if (P2MODE === 'random') G.pnames[1] = 'Random bot';
   else if (P2MODE === 'heuristic') G.pnames[1] = 'Heuristic AI';
-  else if (P2MODE === 'llm') G.pnames[1] = 'OpenAI AI';
+  else if (P2MODE === 'llm') G.pnames[1] = 'Claude AI';
   REPLAY=[];document.getElementById('overlay').style.display='none';
   log(`Game start. ${pname(0)} on ${G.starts[0]}, ${pname(1)} on ${G.starts[1]}. Order ${G.order.map(pname).join(' → ')}.`);
   startTurn();}

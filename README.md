@@ -44,39 +44,39 @@ On the start screen you can set **Player 2** to:
 - **Human (hot-seat)** — two people share the screen (default).
 - **Random bot** — picks any legal move with equal probability (a simple baseline engine).
 - **Heuristic AI** — a built-in rule-based strategy (claims valuable connecting tiles, seizes bridges, manages coins). Offline, instant, free. In testing it beats the random bot ~99% of games.
-- **OpenAI AI** — moves are chosen by an OpenAI model via function-calling (each legal move is a tool the model can call). This one needs the local server below.
+- **Claude AI** — moves are chosen by an Claude model via function-calling (each legal move is a tool the model can call). This one needs the local server below.
 
 AI turns are animated so you can watch them play. Player 1 is always human.
 
-### Running the OpenAI bot (optional, local server)
+### Running the Anthropic bot (optional, local server)
 
-The OpenAI key must **never** go in the game file or the repo, so a tiny local Node server holds it and makes the API calls. The browser talks to the server, not to OpenAI directly.
+The Anthropic key must **never** go in the game file or the repo, so a tiny local Node server holds it and makes the API calls. The browser talks to the server, not to Anthropic directly.
 
 1. Install [Node.js](https://nodejs.org), then in this folder run `npm install`.
-2. Copy `.env.example` to a file named exactly **`.env`** and paste your key: `OPENAI_API_KEY=sk-...`. **`.env` is git-ignored — never commit it.**
+2. Copy `.env.example` to a file named exactly **`.env`** and paste your key: `ANTHROPIC_API_KEY=sk-ant-...`. **`.env` is git-ignored — never commit it.**
 3. Run `node server.js`.
-4. Open **http://localhost:8787** in your browser and choose **OpenAI AI** for Player 2.
+4. Open **http://localhost:8787** in your browser and choose **Claude AI** for Player 2.
 
-The model is set in `server.js` (`MODEL = 'gpt-5.4-nano'`) — change that one line if your account uses a different model id. If the server is unreachable or errors, the OpenAI opponent automatically falls back to the heuristic AI so the game never stalls.
+The model is set in `server.js` (`MODEL = 'claude-opus-4-8'`) — change that one line if your account uses a different model id. If the server is unreachable or errors, the Claude opponent automatically falls back to the heuristic AI so the game never stalls.
 
 ## AI feature
 
-### 🧠 AI Strategist (OpenAI `gpt-5.4-nano`)
+### 🧠 AI Strategist (Anthropic `claude-opus-4-8`)
 
 A new in-game **AI Strategist** panel coaches whoever's turn it is. It reads a short
 snapshot of the live board — turn number, both players' coins, your largest connected
 cluster, the tile you're standing on, the open Flop tiles, and your secret contract —
-and asks `gpt-5.4-nano` for advice:
+and asks `claude-opus-4-8` for advice:
 
 - **💡 Get AI hint** — a 1–2 sentence strategic tip (e.g. *"Claim VESS ($4) — it's the
   cheapest way to grow your IRVIK/GRAIL block without bleeding coins."*).
 - **😈 Taunt** — a short, playful in-character jab about the current position.
 
-The OpenAI key stays **server-side**: the browser calls a tiny local Python backend
-(`ai_server.py`, Flask) which holds the key (from `.env`) and talks to OpenAI. The key
+The Anthropic key stays **server-side**: the browser calls a tiny local Python backend
+(`ai_server.py`, Flask) which holds the key (from `.env`) and talks to Anthropic. The key
 is never sent to the browser, and `.env` is git-ignored. This backend also *serves the
 game itself*, so it's all you need to run for the Strategist — it sits alongside Vihaan's
-original `server.js` (which still powers online play and the OpenAI opponent) and does
+original `server.js` (which still powers online play and the Claude opponent) and does
 not replace it.
 
 **Run it:**
@@ -89,8 +89,8 @@ not replace it.
    ```
 2. Copy `.env.example` to **`.env`** and set:
    ```
-   OPENAI_API_KEY=sk-...
-   OPENAI_MODEL=gpt-5.4-nano
+   ANTHROPIC_API_KEY=sk-ant-...
+   ANTHROPIC_MODEL=claude-opus-4-8
    ```
 3. Start the server and open the game:
    ```bash
@@ -151,13 +151,13 @@ git push -u origin main
 
 | File | Purpose |
 |------|---------|
-| `index.html` | The complete game — hot-seat, bots, OpenAI AI, and online play (this is what GitHub Pages serves). |
+| `index.html` | The complete game — hot-seat, bots, Claude AI, and online play (this is what GitHub Pages serves). |
 | `DESIGN.md` | Human-readable summary of the rules and design decisions. |
 | `CIRCUIT_GDD.docx` | The full Game Design Document (v0.4) with the complete change history. |
 | `CHANGELOG.md` | Version-by-version summary of how the design evolved. |
 | `assets/` | Screenshot used in this README. |
-| `server.js`, `package.json`, `render.yaml` | Node server: serves the game, relays online play, optional OpenAI opponent. |
-| `.env.example` | Template for the OpenAI key (copy to `.env`). |
+| `server.js`, `package.json`, `render.yaml` | Node server: serves the game, relays online play, optional Claude opponent. |
+| `.env.example` | Template for the Anthropic key (copy to `.env`). |
 
 ## Notes
 

@@ -8,5 +8,5 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: npm start
-    # Optional: to enable the OpenAI opponent online, add OPENAI_API_KEY in the Render dashboard
+    # Optional: to enable the Claude opponent online, add ANTHROPIC_API_KEY in the Render dashboard
     # (Settings → Environment). Online human-vs-human play needs no key.
