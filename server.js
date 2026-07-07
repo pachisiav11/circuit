@@ -11,7 +11,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 let Anthropic = null; try { Anthropic = require('@anthropic-ai/sdk'); } catch (e) { /* anthropic optional */ }
 
-const MODEL = 'claude-opus-4-8';              // <-- change if your account uses a different model id
+const MODEL = 'claude-haiku-4-5';              // <-- change if your account uses a different model id
 const PORT = process.env.PORT || 8787;
 
 const app = express();

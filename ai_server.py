@@ -12,7 +12,7 @@
 #
 #   python -m venv venv && source venv/bin/activate     (Windows: venv\Scripts\activate)
 #   pip install -r requirements.txt
-#   # put your key in .env  (ANTHROPIC_API_KEY=sk-ant-...   ANTHROPIC_MODEL=claude-opus-4-8)
+#   # put your key in .env  (ANTHROPIC_API_KEY=sk-ant-...   ANTHROPIC_MODEL=claude-haiku-4-5)
 #   python ai_server.py
 #   # open http://localhost:5001  and click "🧠 AI Strategist" in the game
 
@@ -25,7 +25,7 @@ load_dotenv()
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PORT = int(os.environ.get("AI_PORT", "5001"))
-MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-8")
+MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5")
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 client = anthropic.Anthropic(api_key=API_KEY, timeout=30) if API_KEY else None

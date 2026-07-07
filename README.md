@@ -57,16 +57,16 @@ The Anthropic key must **never** go in the game file or the repo, so a tiny loca
 3. Run `node server.js`.
 4. Open **http://localhost:8787** in your browser and choose **Claude AI** for Player 2.
 
-The model is set in `server.js` (`MODEL = 'claude-opus-4-8'`) — change that one line if your account uses a different model id. If the server is unreachable or errors, the Claude opponent automatically falls back to the heuristic AI so the game never stalls.
+The model is set in `server.js` (`MODEL = 'claude-haiku-4-5'`) — change that one line if your account uses a different model id. If the server is unreachable or errors, the Claude opponent automatically falls back to the heuristic AI so the game never stalls.
 
 ## AI feature
 
-### 🧠 AI Strategist (Anthropic `claude-opus-4-8`)
+### 🧠 AI Strategist (Anthropic `claude-haiku-4-5`)
 
 A new in-game **AI Strategist** panel coaches whoever's turn it is. It reads a short
 snapshot of the live board — turn number, both players' coins, your largest connected
 cluster, the tile you're standing on, the open Flop tiles, and your secret contract —
-and asks `claude-opus-4-8` for advice:
+and asks `claude-haiku-4-5` for advice:
 
 - **💡 Get AI hint** — a 1–2 sentence strategic tip (e.g. *"Claim VESS ($4) — it's the
   cheapest way to grow your IRVIK/GRAIL block without bleeding coins."*).
@@ -90,7 +90,7 @@ not replace it.
 2. Copy `.env.example` to **`.env`** and set:
    ```
    ANTHROPIC_API_KEY=sk-ant-...
-   ANTHROPIC_MODEL=claude-opus-4-8
+   ANTHROPIC_MODEL=claude-haiku-4-5
    ```
 3. Start the server and open the game:
    ```bash

@@ -156,9 +156,9 @@
         <input id="loadFile" type="file" accept="application/json,.json" style="display:none" onchange="loadFromFile(this)">
       </div>
     </div>
-    <!-- 🧠 AI Strategist (Anthropic claude-opus-4-8 via local ai_server.py) -->
+    <!-- 🧠 AI Strategist (Anthropic claude-haiku-4-5 via local ai_server.py) -->
     <div class="card" id="aiStrategistCard">
-      <div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🧠 AI Strategist</b><span class="badge">claude-opus-4-8</span></div>
+      <div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🧠 AI Strategist</b><span class="badge">claude-haiku-4-5</span></div>
       <div class="hint" style="margin-bottom:8px;">Reads the board &amp; your budget, then coaches the player whose turn it is.</div>
       <div class="btnrow">
         <button id="aiHintBtn" class="primary" onclick="getAIHint('hint')">💡 Get AI hint</button>
@@ -509,7 +509,7 @@ var P2MODE='human';                 // 'human' | 'random' | 'heuristic' | 'llm'
 var AI_ENDPOINT='http://localhost:8791/api/ai-move';  // Node opponent (moved off 8787; a stale ClassMate PWA service worker squats that port)
 var AI_HINT_ENDPOINT='/api/ai-hint';  // served by ai_server.py (Flask); key stays server-side
 
-/* ===== 🧠 AI STRATEGIST: ask claude-opus-4-8 for a hint or a taunt ===== */
+/* ===== 🧠 AI STRATEGIST: ask claude-haiku-4-5 for a hint or a taunt ===== */
 function aiBoardSnapshot(){
   if(!G)return null;
   var p=G.activeIdx, o=p?0:1;
