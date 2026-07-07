@@ -92,7 +92,7 @@ def ai_hint():
         user_prompt = build_user_prompt(board, mode)
         r = client.messages.create(
             model=MODEL,
-            max_tokens=600,
+            max_tokens=300,
             system=SYSTEM,
             messages=[{"role": "user", "content": user_prompt}],
         )
