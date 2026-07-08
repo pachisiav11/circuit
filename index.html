@@ -556,16 +556,54 @@ function bestTargetFor(p){
     var sc=(afford?100:0)-dist*5+COST[st]+(adjToOwn(st,p)?20:0);if(sc>bs){bs=sc;best=st;}});
   return best;
 }
+// simulate giving `state` to `newOwner`, read connectedScore(scoreFor).count, then revert — used to
+// score candidate moves by their actual effect on the real objective (largest connected cluster).
+function simulatedClusterCount(state,newOwner,scoreFor){
+  var prev=G.owner[state];
+  G.owner[state]=newOwner;
+  var c=connectedScore(scoreFor).count;
+  if(prev===undefined)delete G.owner[state];else G.owner[state]=prev;
+  return c;
+}
 function heuristicChoose(p,acts){
-  if(G.phase==='roll')return G.currency[p]<4?{type:'hold'}:{type:'roll'};
+  var turnsLeft=(G.maxTurns||20)-G.turn;
+  if(G.phase==='roll'){
+    if(turnsLeft<=0)return {type:'roll'};                // last turn: banked coins have no future payoff, always act
+    return G.currency[p]<4?{type:'hold'}:{type:'roll'};
+  }
   if(G.phase==='blocked')return {type:'blocked'};
   var i,buy=null,steal=null,claims=[],steps=[];
   for(i=0;i<acts.length;i++){var a=acts[i];
     if(a.type==='buyContract')buy=a;else if(a.type==='steal')steal=a;
     else if(a.type==='claim')claims.push(a);else if(a.type==='step')steps.push(a);}
-  if(buy)return buy;
-  if(claims.length){claims.sort(function(a,b){return ((adjToOwn(b.s,p)?100:0)+COST[b.s])-((adjToOwn(a.s,p)?100:0)+COST[a.s]);});return claims[0];}
-  if(steal&&COST[G.token[p]]>=4&&G.currency[p]>=stealCostFor(G.token[p]))return steal;
+
+  var o=oppOf(p),myBase=connectedScore(p).count,oppBase=connectedScore(o).count;
+
+  // contract-buying is conditional: take it now unless it's a dead (non-connecting) tile AND
+  // buying it would leave too little cash for the next turn or two — in that case, prefer a
+  // stronger available claim/steal instead and come back for the contract later.
+  if(buy){
+    var c=G.contract[p],cost=COST[c];
+    var buyGrowth=simulatedClusterCount(c,p,p)-myBase;
+    var reserve=turnsLeft<=1?0:2;
+    if(buyGrowth>0||G.currency[p]-cost>=reserve)return buy;
+  }
+  if(claims.length){
+    var bestClaim=claims[0],bestScore=-Infinity;
+    claims.forEach(function(a){
+      var growth=simulatedClusterCount(a.s,p,p)-myBase;
+      var score=growth*1000-COST[a.s];                   // COST only breaks ties between equal-growth claims
+      if(score>bestScore){bestScore=score;bestClaim=a;}
+    });
+    return bestClaim;
+  }
+  if(steal){
+    var t=G.token[p];
+    var myGrowth=simulatedClusterCount(t,p,p)-myBase;
+    var oppShrink=oppBase-simulatedClusterCount(t,p,o);  // denial: how much seizing this tile cuts the opponent's cluster
+    if(myGrowth+oppShrink>0)return steal;
+  }
+  if(buy)return buy;                                     // nothing better available — buy anyway
   var T=bestTargetFor(p);
   if(T&&steps.length){var dT=bfsFrom(T);steps.sort(function(a,b){return (dT[a.s]===undefined?99:dT[a.s])-(dT[b.s]===undefined?99:dT[b.s]);});return steps[0];}
   if(steps.length)return steps[(Math.random()*steps.length)|0];
