@@ -37,71 +37,15 @@ Use **💾 Save** to download a `circuit-save.json` (your in-progress game plus 
 
 The start screen has a **Number of turns** input (default **20**) next to the player names. In **online** games the **host's** value is authoritative — the guest inherits it.
 
-## AI opponent (Player 2)
+## Computer opponent (Player 2)
 
 On the start screen you can set **Player 2** to:
 
 - **Human (hot-seat)** — two people share the screen (default).
-- **Random bot** — picks any legal move with equal probability (a simple baseline engine).
-- **Heuristic AI** — a built-in rule-based strategy (claims valuable connecting tiles, seizes bridges, manages coins). Offline, instant, free. In testing it beats the random bot ~99% of games.
-- **OpenAI AI** — moves are chosen by an OpenAI model via function-calling (each legal move is a tool the model can call). This one needs the local server below.
+- **Computer** — a built-in rule-based strategy (claims valuable connecting tiles, seizes bridges, manages coins). Offline, instant, free — no server or API key needed.
+- **Online opponent** — play a human opponent over the internet (see below).
 
-AI turns are animated so you can watch them play. Player 1 is always human.
-
-### Running the OpenAI bot (optional, local server)
-
-The OpenAI key must **never** go in the game file or the repo, so a tiny local Node server holds it and makes the API calls. The browser talks to the server, not to OpenAI directly.
-
-1. Install [Node.js](https://nodejs.org), then in this folder run `npm install`.
-2. Copy `.env.example` to a file named exactly **`.env`** and paste your key: `OPENAI_API_KEY=sk-...`. **`.env` is git-ignored — never commit it.**
-3. Run `node server.js`.
-4. Open **http://localhost:8787** in your browser and choose **OpenAI AI** for Player 2.
-
-The model is set in `server.js` (`MODEL = 'gpt-5.4-nano'`) — change that one line if your account uses a different model id. If the server is unreachable or errors, the OpenAI opponent automatically falls back to the heuristic AI so the game never stalls.
-
-## AI feature
-
-### 🧠 AI Strategist (OpenAI `gpt-5.4-nano`)
-
-A new in-game **AI Strategist** panel coaches whoever's turn it is. It reads a short
-snapshot of the live board — turn number, both players' coins, your largest connected
-cluster, the tile you're standing on, the open Flop tiles, and your secret contract —
-and asks `gpt-5.4-nano` for advice:
-
-- **💡 Get AI hint** — a 1–2 sentence strategic tip (e.g. *"Claim VESS ($4) — it's the
-  cheapest way to grow your IRVIK/GRAIL block without bleeding coins."*).
-- **😈 Taunt** — a short, playful in-character jab about the current position.
-
-The OpenAI key stays **server-side**: the browser calls a tiny local Python backend
-(`ai_server.py`, Flask) which holds the key (from `.env`) and talks to OpenAI. The key
-is never sent to the browser, and `.env` is git-ignored. This backend also *serves the
-game itself*, so it's all you need to run for the Strategist — it sits alongside Vihaan's
-original `server.js` (which still powers online play and the OpenAI opponent) and does
-not replace it.
-
-**Run it:**
-
-1. Create a virtual env and install deps:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate          # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-2. Copy `.env.example` to **`.env`** and set:
-   ```
-   OPENAI_API_KEY=sk-...
-   OPENAI_MODEL=gpt-5.4-nano
-   ```
-3. Start the server and open the game:
-   ```bash
-   python ai_server.py
-   ```
-   Then visit **http://localhost:5001** and click **💡 Get AI hint** in the AI Strategist
-   panel during any game.
-
-The endpoint is `POST /api/ai-hint` with a JSON body `{ "mode": "hint"|"taunt", "board": {…} }`;
-it returns `{ "hint": "…" }`. If the key is missing it returns a clear `503`, and if the
-backend is unreachable the panel shows a friendly note instead of breaking the game.
+Computer turns are animated so you can watch them play. Player 1 is always human.
 
 ## Watch a finished game (replay)
 
@@ -151,15 +95,15 @@ git push -u origin main
 
 | File | Purpose |
 |------|---------|
-| `index.html` | The complete game — hot-seat, bots, OpenAI AI, and online play (this is what GitHub Pages serves). |
+| `index.html` | The complete game — hot-seat, the Computer opponent, and online play (this is what GitHub Pages serves). |
 | `DESIGN.md` | Human-readable summary of the rules and design decisions. |
 | `CIRCUIT_GDD.docx` | The full Game Design Document (v0.4) with the complete change history. |
 | `CHANGELOG.md` | Version-by-version summary of how the design evolved. |
 | `assets/` | Screenshot used in this README. |
-| `server.js`, `package.json`, `render.yaml` | Node server: serves the game, relays online play, optional OpenAI opponent. |
-| `.env.example` | Template for the OpenAI key (copy to `.env`). |
+| `server.js`, `package.json`, `render.yaml` | Node server: serves the game and relays online play. |
+| `.env.example` | Template for optional server settings (copy to `.env`). |
 
 ## Notes
 
-- **Two ways to play multiplayer:** hot-seat (same screen) and online (two devices via the server) — both live in `index.html`. Online needs the Node server running (locally or on Render); GitHub Pages is static-only, so online play won't work when served from Pages (hot-seat and the local bots still do).
+- **Two ways to play multiplayer:** hot-seat (same screen) and online (two devices via the server) — both live in `index.html`. Online needs the Node server running (locally or on Render); GitHub Pages is static-only, so online play won't work when served from Pages (hot-seat and the Computer opponent still do).
 - Built as a sing

@@ -2,6 +2,12 @@
 
 All notable design and gameplay changes, newest first. (Versions track the design iterations recorded in the GDD.)
 
+## v1.4 — Removed AI Strategist & LLM opponent
+- Removed the **🧠 AI Strategist** hint/taunt panel, the LLM-controlled (OpenAI) opponent, and the **Random bot** mode. Player 2 is now exactly **Human (hot-seat)**, **Computer**, or **Online opponent**.
+- The rule-based bot (internally still `heuristicChoose`) is the only bot and is now labelled **Computer** everywhere a player sees it, instead of the jargony "Heuristic AI".
+- `server.js` no longer requires `openai` or any API key — it only serves the game and relays online multiplayer. `ai_server.py` (the Python Flask AI Strategist backend) and its `requirements.txt` were deleted.
+- No functional change to online play or to how the Computer opponent picks moves in this version (see the next entry for the heuristic scoring rework).
+
 ## v1.3 — Learnability & UX pass
 - **Configurable turn count:** a *Number of turns* input on the start screen (default 20). In online games the **host's** value is authoritative. All docs and in-game text now reference this instead of a hardcoded 20.
 - **Steal count fix:** the side-panel readout now shows **total states owned** rather than a "claimed" figure that special-cased the home tile — so seizing a home tile no longer leaves the count looking frozen.
