@@ -395,7 +395,11 @@ let revealStage=0; // secret-contract reveal: 0 hidden, 1 confirm, 2 shown — r
 function rcReveal(){revealStage=1;render();}
 function rcShow(){revealStage=2;render();}
 function rcHide(){revealStage=0;render();}
-function startTurn(){if(!REPLAYMODE)REPLAY.push(snap());G.die=null;G.stepsLeft=0;G.moved=false;G.phase='roll';revealStage=0;
+let lowBalanceConfirm=false; // low-balance roll gate: false = normal Roll/Hold, true = showing confirm — reset every turn
+function attemptRoll(){if(G.currency[G.activeIdx]<=5){lowBalanceConfirm=true;render();return;}doRoll();}
+function lbConfirmRoll(){lowBalanceConfirm=false;doRoll();}
+function lbGoBack(){lowBalanceConfirm=false;render();}
+function startTurn(){if(!REPLAYMODE)REPLAY.push(snap());G.die=null;G.stepsLeft=0;G.moved=false;G.phase='roll';revealStage=0;lowBalanceConfirm=false;
   if(G.contract[G.activeIdx]==null&&freeStates().length)drawContract(G.activeIdx); // safety regrant if a state has freed up
   G.turnStart={p:G.activeIdx,currency:G.currency[G.activeIdx],states:statesOf(G.activeIdx).length};
   log(`<span class="me">${pname(G.activeIdx)}</span> — turn ${G.turn}. Currency ${G.currency[G.activeIdx]}.`);render();
@@ -745,9 +749,12 @@ function render(){
   if(REPLAYMODE){replayControls(ins,ctr);}
   else if(ONLINE&&G.activeIdx!==MYIDX){ins.innerHTML='⏳ Opponent move — waiting…';}
   else if(isBot(p)){ins.innerHTML='🤖 '+pname(p)+' (AI) is taking its turn…';}
-  else if(G.phase==='roll'){
+  else if(G.phase==='roll'&&lowBalanceConfirm&&G.currency[p]<=5){
+    ins.innerHTML=`⚠️ <b style="color:var(--danger)">Low balance</b> — you have <b>$${G.currency[p]}</b>, which is $5 or less. Rolling can cost you coins on opponent tiles.`;
+    ctr.innerHTML=`<div class="hint" style="color:var(--danger)">Are you sure you want to roll?</div><div class="btnrow" style="margin-top:8px;"><button class="primary" onclick="lbConfirmRoll()">Continue &amp; Roll</button><button onclick="lbGoBack()">Go Back</button></div>`;
+  }else if(G.phase==='roll'){
     ins.innerHTML='<b>Roll</b> to move your token (you pick the route, 1 step at a time), or <b>Hold</b> to bank +5 currency and end your turn.';
-    ctr.innerHTML=`<div class="btnrow"><button class="primary" onclick="doRoll()">Roll d3 (move)</button><button class="warn" onclick="doHold()">Hold (+5 coins)</button></div>`;
+    ctr.innerHTML=`<div class="btnrow"><button class="primary" onclick="attemptRoll()">Roll d3 (move)</button><button class="warn" onclick="doHold()">Hold (+5 coins)</button></div>`;
   }else if(G.phase==='move'){
     ins.innerHTML=`<b>${G.stepsLeft}</b> step${G.stepsLeft===1?'':'s'} left from <b>${G.token[p]}</b>. Click a <span style="color:var(--step)">blue</span> tile to step (<span style="color:var(--danger)">orange = opponent, −1</span>), or a <span style="color:var(--good)">green</span> tile to choose claim or pass.`;
     {let html='';const t=G.token[p];
