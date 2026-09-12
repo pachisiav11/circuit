@@ -310,7 +310,7 @@ function newState(){
   const e1=EDGE_STATES[(Math.random()*EDGE_STATES.length)|0];let best=null,bd=-1;
   EDGE_STATES.forEach(e=>{if(e===e1)return;let d=Math.abs(ang(e)-ang(e1));d=Math.min(d,2*Math.PI-d);if(d>bd){bd=d;best=e;}});
   const starts=[e1,best];const owner={};owner[e1]=0;owner[best]=1;const token=[e1,best];
-  const pool=ALL.filter(s=>owner[s]===undefined&&!EDGE_STATES.includes(s));shuffle(pool);
+  const pool=ALL.filter(s=>owner[s]===undefined);shuffle(pool);  // the 2 assigned starts are owned; the other 3 edge states join the pool
   const flop=pool.splice(0,3);
   // each player gets a private secret contract pulled OUT of the shared pool (disjoint from flop)
   const contract=[pool.length?pool.pop():null, pool.length?pool.pop():null];
@@ -345,12 +345,13 @@ function isStep(s,p){
   if(!ADJ[G.token[p]].has(s))return false;
   if(G.owner[s]===oppOf(p)&&G.currency[p]<1)return false;     // can't afford the opponent-tile toll → blocked
   return true;}                                                // every unclaimed tile is walkable; claiming a Flop tile is an explicit choice (popup)
-// states free to be drawn into the Flop or as a contract (never edge/start, owned, in-flop, or already a contract)
-function freeStates(){return ALL.filter(s=>!EDGE_STATES.includes(s)&&G.owner[s]===undefined&&!G.flop.includes(s)&&G.contract[0]!==s&&G.contract[1]!==s);}
+// states free to be drawn into the Flop or as a contract (never owned, in-flop, or already a contract).
+// The 2 edge states used as starts are owned, so they filter out here; the 3 spare ones are ordinary tiles.
+function freeStates(){return ALL.filter(s=>G.owner[s]===undefined&&!G.flop.includes(s)&&G.contract[0]!==s&&G.contract[1]!==s);}
 // contract pool, widened in steps: the Flop and the opponent's contract only reserve a state while
 // something else is still on offer, otherwise a late-game board hands one player a permanent null
 function contractPool(p){const o=oppOf(p);
-  const unowned=ALL.filter(s=>!EDGE_STATES.includes(s)&&G.owner[s]===undefined);
+  const unowned=ALL.filter(s=>G.owner[s]===undefined);
   let av=unowned.filter(s=>!G.flop.includes(s)&&G.contract[o]!==s);
   if(!av.length)av=unowned.filter(s=>G.contract[o]!==s);
   if(!av.length)av=unowned;
