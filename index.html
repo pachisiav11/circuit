@@ -347,7 +347,17 @@ function isStep(s,p){
   return true;}                                                // every unclaimed tile is walkable; claiming a Flop tile is an explicit choice (popup)
 // states free to be drawn into the Flop or as a contract (never edge/start, owned, in-flop, or already a contract)
 function freeStates(){return ALL.filter(s=>!EDGE_STATES.includes(s)&&G.owner[s]===undefined&&!G.flop.includes(s)&&G.contract[0]!==s&&G.contract[1]!==s);}
-function drawContract(p){const av=freeStates();G.contract[p]=av.length?av[(Math.random()*av.length)|0]:null;}
+// contract pool, widened in steps: the Flop and the opponent's contract only reserve a state while
+// something else is still on offer, otherwise a late-game board hands one player a permanent null
+function contractPool(p){const o=oppOf(p);
+  const unowned=ALL.filter(s=>!EDGE_STATES.includes(s)&&G.owner[s]===undefined);
+  let av=unowned.filter(s=>!G.flop.includes(s)&&G.contract[o]!==s);
+  if(!av.length)av=unowned.filter(s=>G.contract[o]!==s);
+  if(!av.length)av=unowned;
+  return av;}
+function drawContract(p){const av=contractPool(p);G.contract[p]=av.length?av[(Math.random()*av.length)|0]:null;}
+// a contract can now sit on a Flop tile, so it can be claimed out from under its owner - that one is dead
+function contractStale(p){const c=G.contract[p];return c!=null&&G.owner[c]!==undefined;}
 // min opponent-tile tolls to STAND on each tile within maxSteps (can't stand on unclaimed Flop tiles)
 function routeReach(p,maxSteps){
   const start=G.token[p];const best={};ALL.forEach(t=>best[t]=Infinity);best[start]=0;
@@ -400,7 +410,8 @@ function attemptRoll(){if(G.currency[G.activeIdx]<=5){lowBalanceConfirm=true;ren
 function lbConfirmRoll(){lowBalanceConfirm=false;doRoll();}
 function lbGoBack(){lowBalanceConfirm=false;render();}
 function startTurn(){if(!REPLAYMODE)REPLAY.push(snap());G.die=null;G.stepsLeft=0;G.moved=false;G.phase='roll';revealStage=0;lowBalanceConfirm=false;
-  if(G.contract[G.activeIdx]==null&&freeStates().length)drawContract(G.activeIdx); // safety regrant if a state has freed up
+  if(contractStale(G.activeIdx))G.contract[G.activeIdx]=null;  // target was claimed while it sat in the Flop
+  if(G.contract[G.activeIdx]==null)drawContract(G.activeIdx);   // regrant whenever anything claimable is left
   G.turnStart={p:G.activeIdx,currency:G.currency[G.activeIdx],states:statesOf(G.activeIdx).length};
   log(`<span class="me">${pname(G.activeIdx)}</span> — turn ${G.turn}. Currency ${G.currency[G.activeIdx]}.`);render();
   maybeFlashLowMoney();maybeFlashGameStartHints();}
@@ -776,7 +787,7 @@ function render(){
   cc.classList.remove('contract-glow');
   if(REPLAYMODE){cc.innerHTML='<div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🎯 Secret Contract</b></div><div class="hint">Hidden during replay.</div>';}else if(isBot(p)){cc.innerHTML='<div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🎯 Secret Contract</b><span class="badge">P2 · AI</span></div><div class="hint">Hidden — the AI keeps its own contract secret.</div>';}else{
   let ch=`<div class="row" style="margin-bottom:6px;"><b style="font-size:13px;">🎯 Secret Contract</b><span class="badge">${pname(cp)} only</span></div>`;
-  if(!ct){ch+=`<div class="hint">No contract right now — every state is claimed or in the Flop. You'll get one when a state frees up.</div>`;}
+  if(!ct){ch+=`<div class="hint">No contract right now — every claimable state on the board is already owned.</div>`;}
   else if(nonHotseat){const onIt=G.token[cp]===ct;
     ch+=`<div class="hint">Your secret contract: <b style="color:var(--good);font-size:15px;">${ct}</b> ($${COST[ct]}). Walk your token onto it, then buy it here. Only you can ever see it.</div>`;
     if(onIt&&canBuyContract(cp)&&(!ONLINE||G.activeIdx===cp)){ch+=`<button class="primary" style="width:100%;margin-top:8px;" onclick="doBuyContract()">🎯 Buy ${ct} for $${COST[ct]} (ends turn)</button>`;if(G.activeIdx===cp)cc.classList.add('contract-glow');}
