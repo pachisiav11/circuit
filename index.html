@@ -206,6 +206,7 @@
     You lose <b>1 currency for every opponent tile</b> you pass through or stop on. Move onto an unclaimed Flop state to claim it, which ends your turn.
     Or <b>Hold</b> to bank <b>+5 currency</b> and end your turn without moving.</p>
     <p style="color:var(--acc)">🔄 The Flop always holds 3 open tiles — claim one and it's immediately replaced, so fresh options keep appearing all game.</p>
+    <p style="color:var(--danger)">🗡️ <b>Stealing &amp; the lock.</b> Stand on an opponent's tile and pay <b>double its price</b> to seize it (ends your turn). A tile that was just seized is <b>locked</b>: the player who lost it <b>can't seize it back on their very next turn</b> — only from the turn after. A freshly seized tile can't be answered at once, so plan your route and don't count on an instant comeback. The game warns you before a move that can't end in a seize.</p>
     <p style="color:var(--gold)">Hot-seat: two humans share this screen. Pass the device each turn.</p>
     <!-- Player Name Inputs -->
     <div id="localNamePanel" style="margin-top:14px; text-align:left; background:var(--panel2); padding:12px; border-radius:10px; border:1px solid var(--line); display:flex; flex-direction:column; gap:10px;">
@@ -252,7 +253,8 @@
     <p style="color:var(--ink);"><b>🔄 Flop refills.</b> The Flop always shows 3 unclaimed tiles. The moment one is claimed, a new one is drawn in its place — it never runs dry.</p>
     <p style="color:var(--ink);"><b>🚶 Tolls.</b> Your land &amp; empty land are free to cross; each step onto an <span style="color:var(--danger)">opponent tile costs 1 coin</span>.</p>
     <p style="color:var(--ink);"><b>🟩 Board colours:</b> <span style="color:var(--good)">green outline</span> = a Flop tile (claimable) · <span style="color:var(--step)">blue</span> = a step you can take · <span style="color:var(--danger)">orange</span> = opponent tile (−1) · <span style="color:#f5e05a">yellow</span> = reachable Flop tile you can't yet afford.</p>
-    <p style="color:var(--ink);"><b>🗡️ Steal.</b> Stand on an opponent tile and pay <b>double its price</b> to seize it (ends turn) — great for splitting their cluster. Can't be stolen back the very next turn. A banner and pop-up always tell you whether you can seize the tile you're on, and if not, why.</p>
+    <p style="color:var(--ink);"><b>🗡️ Steal.</b> Stand on an opponent tile and pay <b>double its price</b> to seize it (ends turn) — great for splitting their cluster. See the lock below.</p>
+    <p style="color:var(--ink);"><b>🔒 The seize lock.</b> A tile that was <b>just seized is locked</b>: the player who lost it <b>can't seize it back on their very next turn</b> (they can from the turn after). So taking a key tile can't be answered immediately — and if one of yours is taken, plan around it rather than walking back onto it expecting a quick recapture. Standing on an opponent tile, a banner and pop-up always tell you whether you can seize it and, if not, why (locked, with the turn it unlocks, or not enough coins). If your <b>last step</b> would land you on a tile you can't seize, you're warned first.</p>
     <p style="color:var(--ink);"><b>🎯 Secret Contract.</b> A private target only you can see &amp; claim. Walk onto it (it's unmarked) and <b>Buy</b> it from your panel. Online &amp; vs-AI it's always shown; in hot-seat you Reveal it yourself so a sharing opponent can't peek.</p>
     <p style="color:var(--ink);"><b>🏆 Winning.</b> When the final turn ends, the largest connected cluster wins (then states owned, then coins spent; else a draw).</p>
     <button class="primary" onclick="hideRules()" style="width:100%;margin-top:8px;">Got it</button>
@@ -691,7 +693,7 @@ function maybeFlashGameStartHints(){
   if(!G||G.turn!==1||REPLAYMODE)return;
   var p=G.activeIdx,mine=(!isBot(p))&&(!ONLINE||p===MYIDX);
   if(!mine)return;
-  toast('🔄 The Flop refills the instant a tile is claimed.<br>🎯 Heads up — you have a secret contract waiting in your panel!',4500);
+  toast('🔄 The Flop refills the instant a tile is claimed.<br>🎯 Heads up — you have a secret contract waiting in your panel!<br>🔒 A tile that was just seized can\'t be seized back on the loser\'s very next turn.',6500);
 }
 function onCellClick(s){if(REPLAYMODE)return;if(!G||G.phase!=='move')return;const p=G.activeIdx;if(isBot(p))return;if(ONLINE&&G.activeIdx!==MYIDX)return;
   if(canClaim(s,p)){openClaimPrompt(s);return;}   // affordable Flop tile → ask claim vs pass (never auto-claim)
