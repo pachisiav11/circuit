@@ -89,6 +89,12 @@
   .dieval{font-family:var(--display);font-size:30px;font-weight:700;color:var(--gold);line-height:1;}
   .hint{font-size:11.5px;color:var(--dim);line-height:1.5;}
   .hint b{color:var(--ink);}
+  /* seize status callout in the controls panel — deliberately loud so it can't be missed */
+  .stealNote{margin-bottom:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);border-left-width:5px;
+    background:var(--panel2);color:var(--ink);font-size:13.5px;font-weight:600;line-height:1.5;}
+  .stealNote.open{border-color:var(--good);background:rgba(63,211,154,.12);}
+  .stealNote.poor{border-color:var(--danger);background:rgba(242,146,69,.14);}
+  .stealNote.locked{border-color:var(--gold);background:rgba(224,167,60,.16);}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
   .chip{font-size:11.5px;padding:6px 9px;border-radius:8px;border:1px solid var(--line);
     background:rgba(0,0,0,.22);color:var(--dim);}
@@ -246,7 +252,7 @@
     <p style="color:var(--ink);"><b>🔄 Flop refills.</b> The Flop always shows 3 unclaimed tiles. The moment one is claimed, a new one is drawn in its place — it never runs dry.</p>
     <p style="color:var(--ink);"><b>🚶 Tolls.</b> Your land &amp; empty land are free to cross; each step onto an <span style="color:var(--danger)">opponent tile costs 1 coin</span>.</p>
     <p style="color:var(--ink);"><b>🟩 Board colours:</b> <span style="color:var(--good)">green outline</span> = a Flop tile (claimable) · <span style="color:var(--step)">blue</span> = a step you can take · <span style="color:var(--danger)">orange</span> = opponent tile (−1) · <span style="color:#f5e05a">yellow</span> = reachable Flop tile you can't yet afford.</p>
-    <p style="color:var(--ink);"><b>🗡️ Steal.</b> Stand on an opponent tile and pay <b>double its price</b> to seize it (ends turn) — great for splitting their cluster. Can't be stolen back the very next turn.</p>
+    <p style="color:var(--ink);"><b>🗡️ Steal.</b> Stand on an opponent tile and pay <b>double its price</b> to seize it (ends turn) — great for splitting their cluster. Can't be stolen back the very next turn. A banner and pop-up always tell you whether you can seize the tile you're on, and if not, why.</p>
     <p style="color:var(--ink);"><b>🎯 Secret Contract.</b> A private target only you can see &amp; claim. Walk onto it (it's unmarked) and <b>Buy</b> it from your panel. Online &amp; vs-AI it's always shown; in hot-seat you Reveal it yourself so a sharing opponent can't peek.</p>
     <p style="color:var(--ink);"><b>🏆 Winning.</b> When the final turn ends, the largest connected cluster wins (then states owned, then coins spent; else a draw).</p>
     <button class="primary" onclick="hideRules()" style="width:100%;margin-top:8px;">Got it</button>
@@ -415,7 +421,7 @@ function startTurn(){if(!REPLAYMODE)REPLAY.push(snap());G.die=null;G.stepsLeft=0
   if(G.contract[G.activeIdx]==null)drawContract(G.activeIdx);   // regrant whenever anything claimable is left
   G.turnStart={p:G.activeIdx,currency:G.currency[G.activeIdx],states:statesOf(G.activeIdx).length};
   log(`<span class="me">${pname(G.activeIdx)}</span> — turn ${G.turn}. Currency ${G.currency[G.activeIdx]}.`);render();
-  maybeFlashLowMoney();maybeFlashGameStartHints();}
+  maybeFlashLowMoney();maybeFlashGameStartHints();maybeFlashLostTile();}
 function maybeFlashLowMoney(){var el=document.getElementById('moneyFlash');if(!el)return;
   var p=G.activeIdx,mine=(!isBot(p))&&(!ONLINE||G.activeIdx===MYIDX)&&!REPLAYMODE;
   if(mine&&G.currency[p]<5){el.style.display='block';clearTimeout(el._t);el._t=setTimeout(function(){el.style.display='none';},3200);}
@@ -426,7 +432,7 @@ function onlyEndLeft(p){return G.phase==='move'&&!anyMoveAvailable(p)&&!canSteal
 function doRoll(){if(G.phase!=='roll')return;G.die=1+((Math.random()*3)|0);G.stepsLeft=G.die;G.phase='move';
   log(`${pname(G.activeIdx)} rolled <b>${G.die}</b> → ${G.die} step${G.die===1?'':'s'} to move.`);
   if(!anyMoveAvailable(G.activeIdx)){G.phase='blocked';}
-  render();}
+  render();maybeFlashStealStatus();}
 function doHold(){if(G.phase!=='roll')return;const p=G.activeIdx;
   const before=G.currency[p];G.currency[p]=Math.min(COIN_CAP,G.currency[p]+5);const got=G.currency[p]-before;
   log(`${pname(p)} held → <span style="color:var(--gold)">+${got} currency</span>${got<5?` (capped at ${COIN_CAP})`:''}. Currency ${G.currency[p]}.`);endTurn();}
@@ -437,7 +443,7 @@ function doStep(s){const p=G.activeIdx;if(!isStep(s,p))return;
   if(G.stepsLeft<1||!anyMoveAvailable(p)){ // auto-end if nothing more possible
     if(G.stepsLeft<1)log(`${pname(p)} out of steps.`);
   }
-  render();maybeFlashLowMoney();}
+  render();maybeFlashLowMoney();maybeFlashStealStatus();}
 function doClaim(s){const p=G.activeIdx;if(!canClaim(s,p))return;
   const cost=Math.max(0,COST[s]-discount());
   G.token[p]=s;G.stepsLeft--;G.currency[p]-=cost;G.spent[p]+=cost;G.owner[s]=p;G.blockedStreak[p]=0;
@@ -450,8 +456,29 @@ function canStealHere(p){const t=G.token[p];
   return G.phase==='move'&&G.owner[t]===oppOf(p)&&!stealLocked(t)&&G.currency[p]>=stealCostFor(t);}
 function doSteal(){const p=G.activeIdx,t=G.token[p];if(!canStealHere(p))return;
   const cost=stealCostFor(t);G.currency[p]-=cost;G.spent[p]+=cost;G.owner[t]=p;G.stealLock[t]=G.tick;G.blockedStreak[p]=0;
-  log(`<span class="me">${pname(p)}</span> 🗡️ SEIZED <b>${t}</b> from ${pname(oppOf(p))} for $${cost}! Turn ends.`);
+  log(`<span class="me">${pname(p)}</span> 🗡️ SEIZED <b>${t}</b> from ${pname(oppOf(p))} for $${cost}! Turn ends. 🔒 ${pname(oppOf(p))} can't seize it back on their very next turn.`);
   endTurn();}
+// Can the active player seize the opponent tile their token stands on, and if not, why? (null when not on an
+// opponent tile.) Single source of truth for the panel callout, the board label and the toasts below.
+function stealStatus(p){const t=G.token[p];
+  if(G.phase!=='move'||G.owner[t]!==oppOf(p))return null;
+  const cost=stealCostFor(t),have=G.currency[p];
+  return {t:t,cost:cost,have:have,kind:stealLocked(t)?'locked':have<cost?'poor':'open'};}
+// a lock only ever binds the player it was taken from, and each player plays exactly once per G.turn
+function unlockNote(){const next=G.turn+1;
+  return next<=(G.maxTurns||20)?`It unlocks on your next turn (Turn ${next}).`:`The game ends before your next turn, so it stays locked.`;}
+function stealMsg(st){
+  if(st.kind==='open')return `✅ <b>You can seize ${st.t}</b> for <b>$${st.cost}</b> (you have $${st.have}). Seizing ends your turn.`;
+  if(st.kind==='poor')return `💰 <b>You can't seize ${st.t} yet</b> — it costs <b>$${st.cost}</b> (double its price) and you ${st.afterToll?'would have':'have'} <b>$${st.have}</b>${st.afterToll?' after the toll':''}, $${st.cost-st.have} short.`;
+  return `🔒 <b>You can't seize ${st.t} right now</b> — it was just seized, so it's protected from a seize-back this turn. ${unlockNote()}`;}
+var STEAL_ACCENT={open:'var(--good)',poor:'var(--danger)',locked:'var(--gold)'};
+// toasts are for the human looking at this screen only (never the bot, never the other side of an online game)
+function flashIsMine(){if(REPLAYMODE||!G)return false;const p=G.activeIdx;return !isBot(p)&&(!ONLINE||p===MYIDX);}
+function maybeFlashStealStatus(){if(!flashIsMine())return;
+  const st=stealStatus(G.activeIdx);if(st)toast(stealMsg(st),6500,STEAL_ACCENT[st.kind]);}
+function maybeFlashLostTile(){if(!flashIsMine())return;const p=G.activeIdx;
+  const t=ALL.find(s=>G.owner[s]===oppOf(p)&&stealLocked(s));if(!t)return;
+  toast(`🗡️ <b>${t}</b> was just seized from you. 🔒 You can't seize it back this turn. ${unlockNote()}`,6500,STEAL_ACCENT.locked);}
 function doBlocked(){const p=G.activeIdx;
   if(G.blockedStreak[p]>=2){log(`${pname(p)} blocked-resolution capped (2). Turn ends.`);endTurn();return;}
   const roll=1+((Math.random()*6)|0),idx=(roll-1)%G.flop.length,removed=G.flop[idx];
@@ -655,9 +682,9 @@ function startGame(){G=newState();
 
 const NS="http://www.w3.org/2000/svg";let SVG=null,GROUP={};
 let pendingClaim=null;
-function toast(msg,dur){var el=document.getElementById('genToast');
+function toast(msg,dur,accent){var el=document.getElementById('genToast');
   if(!el){el=document.createElement('div');el.id='genToast';el.style.cssText='position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:85;background:#13233a;border:1px solid var(--step);color:#dbeeff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.5);max-width:90vw;text-align:center;line-height:1.5;';document.body.appendChild(el);}
-  el.innerHTML=msg;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(function(){el.style.display='none';},dur||2800);}
+  el.innerHTML=msg;el.style.borderColor=accent||'var(--step)';el.style.display='block';clearTimeout(el._t);el._t=setTimeout(function(){el.style.display='none';},dur||2800);}
 // once per player's first turn: a quick reminder the Flop refills, and a generic nudge to check the secret contract
 // (the contract itself is never named here — hot-seat secrecy stays intact)
 function maybeFlashGameStartHints(){
@@ -668,7 +695,7 @@ function maybeFlashGameStartHints(){
 }
 function onCellClick(s){if(REPLAYMODE)return;if(!G||G.phase!=='move')return;const p=G.activeIdx;if(isBot(p))return;if(ONLINE&&G.activeIdx!==MYIDX)return;
   if(canClaim(s,p)){openClaimPrompt(s);return;}   // affordable Flop tile → ask claim vs pass (never auto-claim)
-  if(isStep(s,p)){doStep(s);return;}
+  if(isStep(s,p)){const w=stepWarning(s,p);if(w){openStepWarning(s,w);return;}doStep(s);return;}
   if(s===G.token[p])return;                         // clicking your own tile — handled by panel buttons
   if(!ADJ[G.token[p]].has(s)){                       // non-adjacent (in the Flop/contract or not) → guide step-by-step
     toast('↔ You can only move to a <b>bordering</b> state — travel there <b>one step at a time</b>.');return;}
@@ -680,6 +707,24 @@ function openClaimPrompt(s){pendingClaim=s;const cost=Math.max(0,COST[s]-discoun
     `<div class="btnrow" style="margin-top:14px;"><button class="primary" onclick="confirmClaim()">Claim for $${cost} — end turn</button><button onclick="passThrough()">Pass through</button></div>`+
     `<button onclick="cancelClaim()" style="width:100%;margin-top:8px;">Cancel</button>`;
   document.getElementById('claimPrompt').style.display='flex';}
+// Fair warning BEFORE the move: the last step of a roll is the commit point (nothing can be changed after it), so if it
+// would land on an opponent tile you won't be able to seize, say so and why first. Earlier steps aren't blocked —
+// you can still walk on — but the board labels already show their state.
+var pendingStep=null;
+function stepWarning(s,p){
+  if(G.stepsLeft!==1||G.owner[s]!==oppOf(p))return null;
+  const have=G.currency[p]-1,cost=stealCostFor(s);     // the −1 toll is paid on arrival
+  const kind=stealLocked(s)?'locked':have<cost?'poor':'open';
+  return kind==='open'?null:{t:s,cost:cost,have:have,kind:kind,afterToll:true};}
+function openStepWarning(s,st){pendingStep=s;
+  document.querySelector('#claimPrompt .modal').innerHTML=
+    `<h2 style="margin:0 0 10px;letter-spacing:1px;">Step onto ${s}?</h2>`+
+    `<p style="color:var(--dim);font-size:13px;line-height:1.6;">This is your <b>last step</b>, so your move would end on ${s} (opponent tile, <b>−1</b> toll).</p>`+
+    `<div class="stealNote ${st.kind}">${stealMsg(st)}</div>`+
+    `<div class="btnrow" style="margin-top:14px;"><button class="primary" onclick="confirmStep()">Step anyway</button><button onclick="cancelStep()">Choose another</button></div>`;
+  document.getElementById('claimPrompt').style.display='flex';}
+function confirmStep(){const s=pendingStep;pendingStep=null;document.getElementById('claimPrompt').style.display='none';doStep(s);}
+function cancelStep(){pendingStep=null;document.getElementById('claimPrompt').style.display='none';}
 function confirmClaim(){const s=pendingClaim;pendingClaim=null;document.getElementById('claimPrompt').style.display='none';doClaim(s);}
 function passThrough(){const s=pendingClaim;pendingClaim=null;document.getElementById('claimPrompt').style.display='none';doStep(s);}
 function cancelClaim(){pendingClaim=null;document.getElementById('claimPrompt').style.display='none';}
@@ -720,7 +765,9 @@ function paintBoard(){
     c.classList.remove('clickable');
     if(G.phase==='move' && !REPLAYMODE && s===G.token[p]){          // the tile the token sits on
       if(canStealHere(p)){stk="#e0a73c";sw=5;label="Seize $"+stealCostFor(s);big=true;lcol="#ffe9b0";}
-      else{stk="#ffffff";sw=4.5;}
+      else{stk="#ffffff";sw=4.5;
+        const st=stealStatus(p);                    // on an opponent tile but can't seize it: say why on the tile itself
+        if(st){big=true;if(st.kind==='locked'){label="🔒 Locked";lcol="#ffe9b0";}else{label="Need $"+st.cost;lcol="#ffd9b8";}}}
     }else if(G.phase==='move' && !REPLAYMODE){
       if(canClaim(s,p)){                              // adjacent + affordable FLOP tile → solid green (contracts are NOT marked — remember by name)
         fill="#1f7a4d";stk="#5ff0a8";sw=13.5;c.classList.add('clickable');front.push(s);
@@ -735,7 +782,7 @@ function paintBoard(){
         const opp=G.owner[s]===oppOf(p);
         stk=opp?"#f29245":"#62b8f5";sw=opp?4.5:18;c.classList.add('clickable');front.push(s);
         if(opp){const sc=stealCostFor(s);
-          label=(G.currency[p]>=1+sc&&!stealLocked(s))?`−1 · seize $${sc}`:"Step −1";lcol="#ffd9b8";}
+          label=stealLocked(s)?"−1 · 🔒 locked":G.currency[p]>=1+sc?`−1 · seize $${sc}`:`−1 · $${1+sc} to seize`;lcol="#ffd9b8";}
       }
     }
     c.setAttribute("fill",fill);c.setAttribute("stroke",stk);c.setAttribute("stroke-width",sw);
@@ -770,10 +817,9 @@ function render(){
   }else if(G.phase==='move'){
     ins.innerHTML=`<b>${G.stepsLeft}</b> step${G.stepsLeft===1?'':'s'} left from <b>${G.token[p]}</b>. Click a <span style="color:var(--step)">blue</span> tile to step (<span style="color:var(--danger)">orange = opponent, −1</span>), or a <span style="color:var(--good)">green</span> tile to choose claim or pass.`;
     {let html='';const t=G.token[p];
-     if(G.owner[t]===oppOf(p)){const c=stealCostFor(t);
-       if(stealLocked(t))html+=`<button disabled style="width:100%;margin-bottom:6px;">🗡️ ${t} just changed hands — can't seize yet</button>`;
-       else if(G.currency[p]>=c)html+=`<button class="warn" style="width:100%;margin-bottom:6px;" onclick="doSteal()">🗡️ Seize ${t} for $${c} (ends turn)</button>`;
-       else html+=`<button disabled style="width:100%;margin-bottom:6px;">🗡️ Seize ${t} needs $${c}</button>`;}
+     const st=stealStatus(p);
+     if(st){html+=`<div class="stealNote ${st.kind}">${stealMsg(st)}</div>`;
+       if(st.kind==='open')html+=`<button class="warn" style="width:100%;margin-bottom:6px;" onclick="doSteal()">🗡️ Seize ${t} for $${st.cost} (ends turn)</button>`;}
      html+=`<button onclick="endTurn()">End turn here</button>`;ctr.innerHTML=html;}
   }else if(G.phase==='blocked'){
     ins.innerHTML=`No legal move/claim available. <b>Blocked Resolution</b>: roll to swap out one Flop entry (max 2 in a row; streak ${G.blockedStreak[p]}).`;
@@ -781,7 +827,8 @@ function render(){
   }
   const ec=document.getElementById('endCover');
   if(ec){if(!REPLAYMODE&&!(ONLINE&&G.activeIdx!==MYIDX)&&!isBot(p)&&onlyEndLeft(p)){
-      ec.style.display='flex';document.getElementById('endCoverMsg').textContent=G.moved?'No useful moves left this turn — end your turn to continue.':'No move is possible from here — end your turn to continue.';}
+      const st=stealStatus(p);                        // standing on an opponent tile you can't seize: this overlay is the thing you'll read, so say why
+      ec.style.display='flex';document.getElementById('endCoverMsg').innerHTML=(G.moved?'No useful moves left this turn — end your turn to continue.':'No move is possible from here — end your turn to continue.')+(st?`<br><br>${stealMsg(st)}`:'');}
     else ec.style.display='none';}
   const nonHotseat=ONLINE||(typeof P2MODE!=='undefined'&&P2MODE!=='human');
   const cp=(ONLINE?MYIDX:p);const cc=document.getElementById('contractCard');const ct=G.contract[cp];

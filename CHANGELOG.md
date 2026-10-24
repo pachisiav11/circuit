@@ -2,6 +2,14 @@
 
 All notable design and gameplay changes, newest first. (Versions track the design iterations recorded in the GDD.)
 
+## v1.5 — Clear "can I seize this?" notices
+- The just-seized lock stays (a tile that just changed hands can't be seized back on the very next turn), but it is no longer silent. Previously the only hint was a greyed-out button reading "just changed hands — can't seize yet".
+- While standing on an opponent tile, the controls panel now shows a high-contrast banner in one of three states: **✅ can seize** (cost vs. your coins), **💰 can't afford** (how many coins short), or **🔒 locked** (why, and the exact turn it unlocks — or that the game ends first).
+- The same message pops up as a toast the moment you land on the tile, is repeated in the centred "No useful moves left — end your turn" overlay (which is what you're looking at when you're out of steps and can't seize), and the tile itself is labelled **🔒 Locked** / **Need $N** on the board. Opponent tiles you could step onto are labelled with the same state (`−1 · seize $N`, `−1 · $N to seize`, `−1 · 🔒 locked`).
+- **Warned before you commit:** if the *last step* of your roll (the point after which nothing can be changed) would land you on an opponent tile you won't be able to seize — locked, or too expensive after the −1 toll — a confirmation appears first with the reason: **Step anyway** / **Choose another**. Earlier steps of a roll aren't interrupted, and nothing is shown when you *can* seize. The Computer bypasses the prompt.
+- At the start of your turn, a toast tells you if a tile was just seized from you and when you'll be able to seize it back. The game log notes the lock when a tile is seized.
+- Toasts are shown only to the human whose turn it is (never for the Computer, never to the waiting side of an online game).
+
 ## v1.4 — Removed AI Strategist & LLM opponent
 - Removed the **🧠 AI Strategist** hint/taunt panel, the LLM-controlled (OpenAI) opponent, and the **Random bot** mode. Player 2 is now exactly **Human (hot-seat)**, **Computer**, or **Online opponent**.
 - The rule-based bot (internally still `heuristicChoose`) is the only bot and is now labelled **Computer** everywhere a player sees it, instead of the jargony "Heuristic AI".
