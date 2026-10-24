@@ -24,7 +24,7 @@ Two players share one screen (hot-seat) and pass the device each turn.
   - **Hold** to bank **+5 coins** and end your turn without moving.
 - **Movement costs.** Crossing your own or empty land is free. Stepping onto an **opponent tile costs 1 coin each**. You can never make a move you can't fully pay for.
 - **The Flop.** Only the **3** states in the Flop are claimable at any time; claiming one refills it.
-- **Stealing.** Step onto an opponent's tile and pay **double its price** to seize it — great for splitting their cluster. A tile that just changed hands can't be stolen back next turn.
+- **Stealing.** Step onto an opponent's tile and pay **double its price** to seize it — great for splitting their cluster.
 - **Secret Contracts.** You always hold one **private** target state, visible only to you. Walk your token onto it (it's unmarked — remember it by name), then **Buy** it from your panel; only that deliberate purchase reveals it. In **online** and **vs-AI** games your contract is always shown (the opponent can never see it anyway); in **hot-seat** you press **Reveal → Show → Buy** so a player sharing the screen can't peek. It never appears in the Flop and your opponent can't claim or steal it. Buying draws a new hidden one.
 
 A full in-game **Rules** panel is available from the button in the top-right.

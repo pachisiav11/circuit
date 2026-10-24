@@ -2,6 +2,10 @@
 
 All notable design and gameplay changes, newest first. (Versions track the design iterations recorded in the GDD.)
 
+## v1.5 — Removed the anti-ping-pong steal lock
+- A tile that has just changed hands can now be seized back immediately. Previously the Seize button was disabled with "just changed hands — can't seize yet" for the following turn, which blocked players who were standing on a tile they could afford to take.
+- Removed the lock bookkeeping (`stealLock`, `stealLocked()`, and the `tick` counter that only existed to drive it). Rules text in the in-game help, README and DESIGN updated to match.
+
 ## v1.4 — Removed AI Strategist & LLM opponent
 - Removed the **🧠 AI Strategist** hint/taunt panel, the LLM-controlled (OpenAI) opponent, and the **Random bot** mode. Player 2 is now exactly **Human (hot-seat)**, **Computer**, or **Online opponent**.
 - The rule-based bot (internally still `heuristicChoose`) is the only bot and is now labelled **Computer** everywhere a player sees it, instead of the jargony "Heuristic AI".
