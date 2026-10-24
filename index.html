@@ -246,7 +246,7 @@
     <p style="color:var(--ink);"><b>🔄 Flop refills.</b> The Flop always shows 3 unclaimed tiles. The moment one is claimed, a new one is drawn in its place — it never runs dry.</p>
     <p style="color:var(--ink);"><b>🚶 Tolls.</b> Your land &amp; empty land are free to cross; each step onto an <span style="color:var(--danger)">opponent tile costs 1 coin</span>.</p>
     <p style="color:var(--ink);"><b>🟩 Board colours:</b> <span style="color:var(--good)">green outline</span> = a Flop tile (claimable) · <span style="color:var(--step)">blue</span> = a step you can take · <span style="color:var(--danger)">orange</span> = opponent tile (−1) · <span style="color:#f5e05a">yellow</span> = reachable Flop tile you can't yet afford.</p>
-    <p style="color:var(--ink);"><b>🗡️ Steal.</b> Stand on an opponent tile and pay <b>double its price</b> to seize it (ends turn) — great for splitting their cluster.</p>
+    <p style="color:var(--ink);"><b>🗡️ Steal.</b> Stand on an opponent tile and pay <b>double its price</b> to seize it (ends turn) — great for splitting their cluster. Can't be stolen back the very next turn.</p>
     <p style="color:var(--ink);"><b>🎯 Secret Contract.</b> A private target only you can see &amp; claim. Walk onto it (it's unmarked) and <b>Buy</b> it from your panel. Online &amp; vs-AI it's always shown; in hot-seat you Reveal it yourself so a sharing opponent can't peek.</p>
     <p style="color:var(--ink);"><b>🏆 Winning.</b> When the final turn ends, the largest connected cluster wins (then states owned, then coins spent; else a draw).</p>
     <button class="primary" onclick="hideRules()" style="width:100%;margin-top:8px;">Got it</button>
@@ -320,7 +320,7 @@ function newState(){
   if(ti){const v=parseInt(ti.value,10);if(!isNaN(v)&&v>=1&&v<=99)mt=v;}
   else if(typeof PENDING_TURNS!=='undefined'&&PENDING_TURNS)mt=PENDING_TURNS;
   return {turn:1,activeIdx:order[0],order,currency:[15,15],owner,starts,token,flop,contract,maxTurns:mt,
-    spent:[0,0],die:null,stepsLeft:0,moved:false,blockedStreak:[0,0],phase:'roll',log:[],
+    spent:[0,0],tick:0,stealLock:{},die:null,stepsLeft:0,moved:false,blockedStreak:[0,0],phase:'roll',log:[],
     turnStart:null,pnames:[p1NameVal, p2NameVal]};}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 
@@ -445,10 +445,11 @@ function doClaim(s){const p=G.activeIdx;if(!canClaim(s,p))return;
   log(`<span class="me">${pname(p)}</span> moved onto & claimed <b>${s}</b> ($${cost}). Turn ends. Currency ${G.currency[p]}.`);
   endTurn();}
 function stealCostFor(s){return Math.max(0,2*COST[s]-discount());}
+function stealLocked(s){return (G.tick-(s in G.stealLock?G.stealLock[s]:-99))<=1;}
 function canStealHere(p){const t=G.token[p];
-  return G.phase==='move'&&G.owner[t]===oppOf(p)&&G.currency[p]>=stealCostFor(t);}
+  return G.phase==='move'&&G.owner[t]===oppOf(p)&&!stealLocked(t)&&G.currency[p]>=stealCostFor(t);}
 function doSteal(){const p=G.activeIdx,t=G.token[p];if(!canStealHere(p))return;
-  const cost=stealCostFor(t);G.currency[p]-=cost;G.spent[p]+=cost;G.owner[t]=p;G.blockedStreak[p]=0;
+  const cost=stealCostFor(t);G.currency[p]-=cost;G.spent[p]+=cost;G.owner[t]=p;G.stealLock[t]=G.tick;G.blockedStreak[p]=0;
   log(`<span class="me">${pname(p)}</span> 🗡️ SEIZED <b>${t}</b> from ${pname(oppOf(p))} for $${cost}! Turn ends.`);
   endTurn();}
 function doBlocked(){const p=G.activeIdx;
@@ -466,7 +467,7 @@ function logTurnSummary(){const ts=G.turnStart;if(!ts||ts.p!==G.activeIdx)return
   parts.push(`cluster now ${cl}`);
   G.lastSummary=`${pname(p)}: ${parts.join(', ')}.`;
   log(`<span style="color:var(--acc)">▸ ${G.lastSummary}</span>`);}
-function endTurn(){logTurnSummary();const pos=G.order.indexOf(G.activeIdx);
+function endTurn(){logTurnSummary();G.tick++;const pos=G.order.indexOf(G.activeIdx);
   if(pos<G.order.length-1)G.activeIdx=G.order[pos+1];else{G.activeIdx=G.order[0];G.turn++;}
   if(G.turn>(G.maxTurns||20)){endGame();return;}if(ONLINE){startTurn();return;}if(isBot(G.activeIdx))startBotTurn();else passScreen();}
 function passScreen(){document.getElementById('overlay').style.display='flex';
@@ -734,7 +735,7 @@ function paintBoard(){
         const opp=G.owner[s]===oppOf(p);
         stk=opp?"#f29245":"#62b8f5";sw=opp?4.5:18;c.classList.add('clickable');front.push(s);
         if(opp){const sc=stealCostFor(s);
-          label=(G.currency[p]>=1+sc)?`−1 · seize $${sc}`:"Step −1";lcol="#ffd9b8";}
+          label=(G.currency[p]>=1+sc&&!stealLocked(s))?`−1 · seize $${sc}`:"Step −1";lcol="#ffd9b8";}
       }
     }
     c.setAttribute("fill",fill);c.setAttribute("stroke",stk);c.setAttribute("stroke-width",sw);
@@ -770,7 +771,8 @@ function render(){
     ins.innerHTML=`<b>${G.stepsLeft}</b> step${G.stepsLeft===1?'':'s'} left from <b>${G.token[p]}</b>. Click a <span style="color:var(--step)">blue</span> tile to step (<span style="color:var(--danger)">orange = opponent, −1</span>), or a <span style="color:var(--good)">green</span> tile to choose claim or pass.`;
     {let html='';const t=G.token[p];
      if(G.owner[t]===oppOf(p)){const c=stealCostFor(t);
-       if(G.currency[p]>=c)html+=`<button class="warn" style="width:100%;margin-bottom:6px;" onclick="doSteal()">🗡️ Seize ${t} for $${c} (ends turn)</button>`;
+       if(stealLocked(t))html+=`<button disabled style="width:100%;margin-bottom:6px;">🗡️ ${t} just changed hands — can't seize yet</button>`;
+       else if(G.currency[p]>=c)html+=`<button class="warn" style="width:100%;margin-bottom:6px;" onclick="doSteal()">🗡️ Seize ${t} for $${c} (ends turn)</button>`;
        else html+=`<button disabled style="width:100%;margin-bottom:6px;">🗡️ Seize ${t} needs $${c}</button>`;}
      html+=`<button onclick="endTurn()">End turn here</button>`;ctr.innerHTML=html;}
   }else if(G.phase==='blocked'){

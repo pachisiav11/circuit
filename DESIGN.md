@@ -25,7 +25,7 @@ CIRCUIT is a 2-player hot-seat strategy game on a fixed map of **25 states** dra
 
 - **The Flop.** Exactly **3** claimable states are public at any time; claiming or swapping refills from the pool. Small Flop = high contention and fast turnover.
 - **Movement (d3).** The board is ~6 tiles wide, so a d3 makes crossing it a multi-turn commitment — positioning matters, and a single roll can't teleport you anywhere.
-- **Stealing.** Pay 2× to take an opponent tile; ideal for splitting their cluster by capturing a bridge. There is no re-steal lock: a tile can be seized back immediately.
+- **Stealing.** Pay 2× to take an opponent tile; ideal for splitting their cluster by capturing a bridge. A just-taken tile is locked from being stolen back for one turn (no ping-pong).
 - **Secret Contracts.** Each player holds one private target state, hidden from the opponent. Contract tiles are walkable and unmarked; to claim one you stand on it and deliberately Buy it — only the purchase reveals it, and passing over it is silent. (Online and vs-AI the contract is shown to its owner at all times, since the opponent can never see it; hot-seat keeps the Reveal → Show → Buy step so a shared screen stays secret.) It's removed from the shared pool (never in the Flop, never claimable/stealable by the opponent). Same price as a Flop tile; buying draws a replacement immediately. Pure-random selection; cannot be discarded.
 
 ## Save
